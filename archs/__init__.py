@@ -1,6 +1,5 @@
 from .types import PyTorchModel
 from .ditn import DITN
-from .dat import DAT
 
 
 def load_model(state_dict) -> PyTorchModel:
@@ -21,8 +20,6 @@ def load_model(state_dict) -> PyTorchModel:
     model = None
     if "UFONE.0.ITLs.0.attn.temperature" in state_dict_keys:
         model = DITN(state_dict)
-    elif 'before_RG.1.weight' in state_dict_keys:
-        model = DAT
     else:
         raise Exception("UNSUPPORTED_MODEL")
 
