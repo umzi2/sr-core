@@ -41,7 +41,8 @@ class Upscaler:
             try:
                 img = read_cv(input_image_path)
                 if img is None:
-                    raise Exception("Unsupported image type")
+                    print(f"Unsupported image type: {filename}")
+                    continue
 
                 result = self.__upscale(img)
 
