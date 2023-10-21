@@ -154,7 +154,7 @@ def split_tile_size(tile_size: Size) -> Size:
         assert w >= 16 and h >= 16
         return max(16, w // 2), max(16, h // 2)
 
-def tile_upscale(
+def auto_split(
         img: np.ndarray,
         upscale,
         starting_tile_size: Size,
@@ -170,26 +170,18 @@ def tile_upscale(
     )
 
     if w <= max_tile_size[0] and h <= max_tile_size[1]:
-        # the image might be small enough so that we don't have to split at all
         upscale_result = upscale(img)
         if not isinstance(upscale_result, Split):
             return upscale_result
 
-        # the image was too large
         max_tile_size = split_tile_size(max_tile_size)
 
         print(
             f"Unable to upscale the whole image at once. Reduced tile size to {max_tile_size}."
         )
 
-    # The upscale method is allowed to request splits at any time.
-    # When a split occurs, we have to "restart" the loop and
-    # these 2 variables allow us to split the already processed tiles.
     start_x = 0
     start_y = 0
-
-    # To allocate the result image, we need to know the upscale factor first,
-    # and we only get to know this factor after the first successful upscale.
     result: Optional[np.ndarray] = None
     scale: int = 0
 
@@ -197,12 +189,6 @@ def tile_upscale(
     while restart:
         restart = False
 
-        # This is a bit complex.
-        # We don't actually use the current tile size to partition the image.
-        # If we did, then tile_size=1024 and w=1200 would result in very uneven tiles.
-        # Instead, we use tile_size to calculate how many tiles we get in the x and y direction
-        # and then calculate the optimal tile size for the x and y direction using the counts.
-        # This yields optimal tile sizes which should prevent unnecessary splitting.
         tile_count_x = math.ceil(w / max_tile_size[0])
         tile_count_y = math.ceil(h / max_tile_size[1])
         tile_size_x = math.ceil(w / tile_count_x)
@@ -247,7 +233,6 @@ def tile_upscale(
                     restart = True
                     break
 
-                # figure out by how much the image was upscaled by
                 up_h, up_w, _ = get_h_w_c(upscale_result)
                 current_scale = up_h // padded_tile.height
                 assert current_scale > 0
@@ -255,16 +240,13 @@ def tile_upscale(
                 assert padded_tile.width * current_scale == up_w
 
                 if result is None:
-                    # allocate the result image
                     scale = current_scale
                     result = np.zeros((h * scale, w * scale, c), dtype=np.float32)
 
                 assert current_scale == scale
 
-                # remove overlap padding
                 upscale_result = pad.scale(scale).remove_from(upscale_result)
 
-                # copy into result image
                 tile.scale(scale).write_into(result, upscale_result)
 
     assert result is not None
