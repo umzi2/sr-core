@@ -14,16 +14,14 @@ def load_model(state_dict) -> PyTorchModel:
 
     state_dict_keys = list(state_dict.keys())
 
-    for key in state_dict.keys():
-        print(key, state_dict[key].shape)
+    # for key in state_dict.keys():
+    #     print(key, state_dict[key].shape)
 
     model = None
     if "UFONE.0.ITLs.0.attn.temperature" in state_dict_keys:
         model = DITN(state_dict)
     else:
         raise Exception("UNSUPPORTED_MODEL")
-
-    print(f"Architecture {model.name}")
 
     model.load_state_dict(state_dict, strict=False)
 
