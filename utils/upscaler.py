@@ -4,7 +4,7 @@ import torch
 from archs import load_model
 from utils.cuda import safe_cuda_cache_empty
 from utils.image import cv_save_image, img2tensor, tensor2img, read_cv
-from utils.tile import tile_upscale
+from utils.tile import auto_split
 
 
 class Upscaler:
@@ -23,7 +23,7 @@ class Upscaler:
 
         print(f"Model Architecture: {model.name}")
 
-    def __upscale(self, img: np.ndarray):
+    def __upscale(self, img: np.ndarray) -> np.ndarray:
         tensor = img2tensor(img)
 
         rgba_arch = True if self.model.name == "DITN" else False
@@ -46,7 +46,7 @@ class Upscaler:
                 if img is None:
                     raise RuntimeError(f"Unsupported image type: {filename}")
 
-                result = tile_upscale(img, self.__upscale, (128, 128))
+                result = auto_split(img, self.__upscale, (128, 128))
 
                 output_image_path = os.path.join(self.output_folder, filename)
                 cv_save_image(output_image_path, result, [])
