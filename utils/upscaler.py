@@ -46,7 +46,7 @@ class Upscaler:
                 if img is None:
                     raise RuntimeError(f"Unsupported image type: {filename}")
 
-                result = auto_split(img, self.__upscale, (128, 128))
+                result = auto_split(img, self.__upscale)
 
                 output_image_path = os.path.join(self.output_folder, filename)
                 cv_save_image(output_image_path, result, [])
