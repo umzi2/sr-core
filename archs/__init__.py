@@ -1,5 +1,6 @@
 from .types import PyTorchModel
 from .ditn import DITN
+from .omnisr import OmniSR
 
 
 def load_model(state_dict) -> PyTorchModel:
@@ -20,6 +21,8 @@ def load_model(state_dict) -> PyTorchModel:
     model = None
     if "UFONE.0.ITLs.0.attn.temperature" in state_dict_keys:
         model = DITN(state_dict)
+    elif "residual_layer.0.residual_layer.0.layer.0.fn.0.weight" in state_dict_keys:
+        model = OmniSR(state_dict)
     else:
         raise Exception("UNSUPPORTED_MODEL")
 
