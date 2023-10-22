@@ -24,14 +24,10 @@ class Upscaler:
         print(f"Model Architecture: {model.name}")
 
     def __upscale(self, img: np.ndarray) -> np.ndarray:
-        tensor = img2tensor(img)
-
-        rgba_arch = True if self.model.name == "DITN" else False
-        if rgba_arch:
-            tensor = tensor.unsqueeze(0)
+        tensor = img2tensor(img).unsqueeze(0).to(self.device)
 
         with torch.no_grad():
-            tensor = self.model(tensor.to(self.device))
+            tensor = self.model(tensor)
 
         return tensor2img(tensor)
 
