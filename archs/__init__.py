@@ -1,10 +1,10 @@
 from .types import PyTorchModel
 from .ditn import DITN
 from .omnisr import OmniSR
-from .RRDB import RRDBNet as ESRGAN
-from .SRVGG import SRVGGNetCompact as RealESRGANv2
-from .DAT import DAT
-from .SwinIR import SwinIR
+from .rrdb import RRDBNet as ESRGAN
+from .srvgg import SRVGGNetCompact as RealESRGANv2
+from .dat import DAT
+from .swinir import SwinIR
 def load_model(state_dict) -> PyTorchModel:
     state_dict_keys = list(state_dict.keys())
 
@@ -23,8 +23,6 @@ def load_model(state_dict) -> PyTorchModel:
     model = None
     if "UFONE.0.ITLs.0.attn.temperature" in state_dict_keys:
         model = DITN(state_dict)
-    elif "residual_layer.0.residual_layer.0.layer.0.fn.0.weight" in state_dict_keys:
-        model = OmniSR(state_dict)
     elif "residual_layer.0.residual_layer.0.layer.0.fn.0.weight" in state_dict_keys:
         model = OmniSR(state_dict)
     elif "body.0.weight" in state_dict_keys and "body.1.weight" in state_dict_keys:
