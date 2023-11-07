@@ -1,8 +1,10 @@
 from .types import PyTorchModel
 from .ditn import DITN
 from .omnisr import OmniSR
-
-
+from .RRDB import RRDBNet as ESRGAN
+from .SRVGG import SRVGGNetCompact as RealESRGANv2
+from .DAT import DAT
+from .SwinIR import SwinIR
 def load_model(state_dict) -> PyTorchModel:
     state_dict_keys = list(state_dict.keys())
 
@@ -23,8 +25,20 @@ def load_model(state_dict) -> PyTorchModel:
         model = DITN(state_dict)
     elif "residual_layer.0.residual_layer.0.layer.0.fn.0.weight" in state_dict_keys:
         model = OmniSR(state_dict)
+    elif "residual_layer.0.residual_layer.0.layer.0.fn.0.weight" in state_dict_keys:
+        model = OmniSR(state_dict)
+    elif "body.0.weight" in state_dict_keys and "body.1.weight" in state_dict_keys:
+        model = RealESRGANv2(state_dict)
+    elif "layers.0.residual_group.blocks.0.norm1.weight" in state_dict_keys:
+        model = SwinIR(state_dict)
+    elif "layers.0.blocks.2.attn.attn_mask_0" in state_dict_keys:
+        model = DAT(state_dict)
     else:
-        raise Exception("UNSUPPORTED_MODEL")
+        try:
+            model = ESRGAN(state_dict)
+        except:
+            # pylint: disable=raise-missing-from
+            raise Exception("UNSUPPORTED_MODEL")
 
     model.load_state_dict(state_dict, strict=False)
 

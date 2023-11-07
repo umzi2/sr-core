@@ -8,7 +8,7 @@ from utils.tile import auto_split
 
 
 class Upscaler:
-    def __init__(self, model_path, input_folder, output_folder):
+    def __init__(self, model_path, input_folder, output_folder,tile_size=256):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         state_dict = torch.load(model_path, map_location='cpu')
 
@@ -20,7 +20,7 @@ class Upscaler:
         self.device = device
         self.input_folder = input_folder
         self.output_folder = output_folder
-
+        self.tile_max_size = tile_size
         print(f"Model Architecture: {model.name}")
 
     def __upscale(self, img: np.ndarray) -> np.ndarray:
@@ -42,7 +42,8 @@ class Upscaler:
                 if img is None:
                     raise RuntimeError(f"Unsupported image type: {filename}")
 
-                result = auto_split(img, self.__upscale)
+                result = auto_split(img,self.tile_max_size, self.__upscale)
+
 
                 output_image_path = os.path.join(self.output_folder, filename)
                 cv_save_image(output_image_path, result, [])

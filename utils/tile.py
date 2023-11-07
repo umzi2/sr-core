@@ -157,6 +157,7 @@ def split_tile_size(tile_size: Size) -> Size:
 
 def auto_split(
         img: np.ndarray,
+        tile_max_size,
         upscale,
         overlap: int = 16,
 ) -> np.ndarray:
@@ -164,7 +165,7 @@ def auto_split(
 
     img_region = Region(0, 0, w, h)
 
-    max_tile_size = (256, 256)
+    max_tile_size = (tile_max_size, tile_max_size)
     print(
         f"Auto split image ({w}x{h}px @ {c}) with initial tile size {max_tile_size}."
     )
