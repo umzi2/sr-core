@@ -1,5 +1,5 @@
 # SRCore
-This is a repository for Image Super Resolution that supports multiple architectures.
+Upscaler that supports multiple Image Super-Resolution architectures.
 Example of use with the Upscaler helper class:
 ```py
 from utils.upscaler import Upscaler
