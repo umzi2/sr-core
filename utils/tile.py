@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import math
-import os
-import re
 from dataclasses import dataclass
-from typing import List, Tuple, Union, Callable, Optional
+from typing import Tuple, Optional
 
 import numpy as np
 
@@ -67,10 +65,10 @@ class Padding:
         h, w, _ = get_h_w_c(image)
 
         return image[
-               self.top: (h - self.bottom),
-               self.left: (w - self.right),
-               ...,
-               ]
+            self.top : (h - self.bottom),
+            self.left : (w - self.right),
+            ...,
+        ]
 
 
 @dataclass(frozen=True)
@@ -126,10 +124,10 @@ class Region:
             return image
 
         return image[
-               self.y: (self.y + self.height),
-               self.x: (self.x + self.width),
-               ...,
-               ]
+            self.y : (self.y + self.height),
+            self.x : (self.x + self.width),
+            ...,
+        ]
 
     def write_into(self, lhs: np.ndarray, rhs: np.ndarray):
         h, w, c = get_h_w_c(rhs)
@@ -143,9 +141,9 @@ class Region:
                 rhs = np.expand_dims(rhs, axis=2)
 
         lhs[
-        self.y: (self.y + self.height),
-        self.x: (self.x + self.width),
-        ...,
+            self.y : (self.y + self.height),
+            self.x : (self.x + self.width),
+            ...,
         ] = rhs
 
 
@@ -156,19 +154,17 @@ def split_tile_size(tile_size: Size) -> Size:
 
 
 def auto_split(
-        img: np.ndarray,
-        tile_max_size,
-        upscale,
-        overlap: int = 16,
+    img: np.ndarray,
+    tile_max_size,
+    upscale,
+    overlap: int = 16,
 ) -> np.ndarray:
     h, w, c = get_h_w_c(img)
 
     img_region = Region(0, 0, w, h)
 
     max_tile_size = (tile_max_size, tile_max_size)
-    print(
-        f"Auto split image ({w}x{h}px @ {c}) with initial tile size {max_tile_size}."
-    )
+    print(f"Auto split image ({w}x{h}px @ {c}) with initial tile size {max_tile_size}.")
 
     if w <= max_tile_size[0] and h <= max_tile_size[1]:
         upscale_result = upscale(img)
@@ -178,7 +174,8 @@ def auto_split(
         max_tile_size = split_tile_size(max_tile_size)
 
         print(
-            f"Unable to upscale the whole image at once. Reduced tile size to {max_tile_size}."
+            "Unable to upscale the whole image at once. Reduced tile size to"
+            f" {max_tile_size}."
         )
 
     start_x = 0
@@ -196,7 +193,8 @@ def auto_split(
         tile_size_y = math.ceil(h / tile_count_y)
 
         print(
-            f"Currently {tile_count_x}x{tile_count_y} tiles each {tile_size_x}x{tile_size_y}px."
+            f"Currently {tile_count_x}x{tile_count_y} tiles each"
+            f" {tile_size_x}x{tile_size_y}px."
         )
 
         for y in range(0, tile_count_y):
@@ -228,7 +226,8 @@ def auto_split(
                     start_y = (y * tile_size_x) // new_tile_size_y
 
                     print(
-                        f"Split occurred. New tile size is {max_tile_size}. Starting at {start_x},{start_y}."
+                        f"Split occurred. New tile size is {max_tile_size}. Starting at"
+                        f" {start_x},{start_y}."
                     )
 
                     restart = True

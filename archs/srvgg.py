@@ -27,7 +27,7 @@ class SRVGGNetCompact(nn.Module):
     ):
         super(SRVGGNetCompact, self).__init__()
         self.model_arch = "SRVGG (RealESRGAN)"
-        self.name="Compact"
+        self.name = "Compact"
         self.sub_type = "SR"
 
         self.act_type = act_type
@@ -101,7 +101,8 @@ class SRVGGNetCompact(nn.Module):
         scale = math.sqrt(self.pixelshuffle_shape / self.out_nc)
         if scale - int(scale) > 0:
             print(
-                "out_nc is probably different than in_nc, scale calculation might be wrong"
+                "out_nc is probably different than in_nc, scale calculation might be"
+                " wrong"
             )
         scale = int(scale)
         return scale

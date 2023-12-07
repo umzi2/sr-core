@@ -5,6 +5,8 @@ from .rrdb import RRDBNet as ESRGAN
 from .srvgg import SRVGGNetCompact as RealESRGANv2
 from .dat import DAT
 from .swinir import SwinIR
+
+
 def load_model(state_dict) -> PyTorchModel:
     state_dict_keys = list(state_dict.keys())
 

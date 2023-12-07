@@ -194,7 +194,10 @@ class WindowAttention(nn.Module):
         return x
 
     def extra_repr(self) -> str:
-        return f"dim={self.dim}, window_size={self.window_size}, num_heads={self.num_heads}"
+        return (
+            f"dim={self.dim}, window_size={self.window_size},"
+            f" num_heads={self.num_heads}"
+        )
 
     def flops(self, N):
         # calculate flops for 1 window with token length of N
@@ -375,8 +378,9 @@ class SwinTransformerBlock(nn.Module):
 
     def extra_repr(self) -> str:
         return (
-            f"dim={self.dim}, input_resolution={self.input_resolution}, num_heads={self.num_heads}, "
-            f"window_size={self.window_size}, shift_size={self.shift_size}, mlp_ratio={self.mlp_ratio}"
+            f"dim={self.dim}, input_resolution={self.input_resolution},"
+            f" num_heads={self.num_heads}, window_size={self.window_size},"
+            f" shift_size={self.shift_size}, mlp_ratio={self.mlp_ratio}"
         )
 
     def flops(self):
@@ -487,27 +491,23 @@ class BasicLayer(nn.Module):
         self.use_checkpoint = use_checkpoint
 
         # build blocks
-        self.blocks = nn.ModuleList(
-            [
-                SwinTransformerBlock(
-                    dim=dim,
-                    input_resolution=input_resolution,
-                    num_heads=num_heads,
-                    window_size=window_size,
-                    shift_size=0 if (i % 2 == 0) else window_size // 2,
-                    mlp_ratio=mlp_ratio,
-                    qkv_bias=qkv_bias,
-                    qk_scale=qk_scale,
-                    drop=drop,
-                    attn_drop=attn_drop,
-                    drop_path=drop_path[i]
-                    if isinstance(drop_path, list)
-                    else drop_path,
-                    norm_layer=norm_layer,
-                )
-                for i in range(depth)
-            ]
-        )
+        self.blocks = nn.ModuleList([
+            SwinTransformerBlock(
+                dim=dim,
+                input_resolution=input_resolution,
+                num_heads=num_heads,
+                window_size=window_size,
+                shift_size=0 if (i % 2 == 0) else window_size // 2,
+                mlp_ratio=mlp_ratio,
+                qkv_bias=qkv_bias,
+                qk_scale=qk_scale,
+                drop=drop,
+                attn_drop=attn_drop,
+                drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
+                norm_layer=norm_layer,
+            )
+            for i in range(depth)
+        ])
 
         # patch merging layer
         if downsample is not None:
@@ -528,7 +528,10 @@ class BasicLayer(nn.Module):
         return x
 
     def extra_repr(self) -> str:
-        return f"dim={self.dim}, input_resolution={self.input_resolution}, depth={self.depth}"
+        return (
+            f"dim={self.dim}, input_resolution={self.input_resolution},"
+            f" depth={self.depth}"
+        )
 
     def flops(self):
         flops = 0
@@ -757,7 +760,7 @@ class Upsample(nn.Sequential):
             m.append(nn.PixelShuffle(3))
         else:
             raise ValueError(
-                f"scale {scale} is not supported. " "Supported scales: 2^n and 3."
+                f"scale {scale} is not supported. Supported scales: 2^n and 3."
             )
         super(Upsample, self).__init__(*m)
 
@@ -850,7 +853,7 @@ class SwinIR(nn.Module):
         self.start_unshuffle = 1
 
         self.model_arch = "SwinIR"
-        self.name="SwinIR"
+        self.name = "SwinIR"
         self.sub_type = "SR"
         self.state = state_dict
         if "params_ema" in self.state:

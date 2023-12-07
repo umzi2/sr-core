@@ -4,18 +4,19 @@ import math
 import warnings
 import collections.abc
 from itertools import repeat
-def drop_path(x, drop_prob: float = 0., training: bool = False):
+
+
+def drop_path(x, drop_prob: float = 0.0, training: bool = False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
 
     From: https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/layers/drop.py
     """
-    if drop_prob == 0. or not training:
+    if drop_prob == 0.0 or not training:
         return x
     keep_prob = 1 - drop_prob
     # work with diff dim tensors, not just 2D ConvNets
     shape = (x.shape[0],) + (1,) * (x.ndim - 1)
-    random_tensor = keep_prob + \
-                    torch.rand(shape, dtype=x.dtype, device=x.device)
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
     random_tensor.floor_()  # binarize
     output = x.div(keep_prob) * random_tensor
     return output
@@ -33,6 +34,8 @@ class DropPath(nn.Module):
 
     def forward(self, x):
         return drop_path(x, self.drop_prob, self.training)
+
+
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
     # Cut & paste from PyTorch official master until it's in a few official releases - RW
     # Method based on https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf
@@ -70,6 +73,7 @@ def _no_grad_trunc_normal_(tensor, mean, std, a, b):
         tensor.clamp_(min=a, max=b)
         return tensor
 
+
 def trunc_normal_(
     tensor: torch.Tensor, mean=0.0, std=1.0, a=-2.0, b=2.0
 ) -> torch.Tensor:
@@ -95,13 +99,15 @@ def trunc_normal_(
         >>> nn.init.trunc_normal_(w)
     """
     return _no_grad_trunc_normal_(tensor, mean, std, a, b)
+
+
 """ Layer/Module Helpers
 Hacked together by / Copyright 2020 Ross Wightman
 """
 
 
-
 # From PyTorch internals
+
 
 def _ntuple(n):
     def parse(x):

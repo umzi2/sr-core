@@ -9,16 +9,16 @@ from einops import rearrange
 
 def default_conv(in_channels, out_channels, kernel_size, bias=True):
     return nn.Conv2d(
-        in_channels, out_channels, kernel_size,
-        padding=(kernel_size // 2), bias=bias)
+        in_channels, out_channels, kernel_size, padding=(kernel_size // 2), bias=bias
+    )
 
 
 def to_3d(x):
-    return rearrange(x, 'b c h w -> b (h w) c')
+    return rearrange(x, "b c h w -> b (h w) c")
 
 
 def to_4d(x, h, w):
-    return rearrange(x, 'b (h w) c -> b c h w', h=h, w=w)
+    return rearrange(x, "b (h w) c -> b c h w", h=h, w=w)
 
 
 class FeedForward(nn.Module):
@@ -27,8 +27,15 @@ class FeedForward(nn.Module):
         hidden_features = int(dim * ffn_expansion_factor)
         self.project_in = nn.Conv2d(dim, hidden_features * 2, kernel_size=1, bias=bias)
 
-        self.dwconv = nn.Conv2d(hidden_features * 2, hidden_features * 2, kernel_size=3, stride=1, padding=1,
-                                groups=hidden_features * 2, bias=bias)
+        self.dwconv = nn.Conv2d(
+            hidden_features * 2,
+            hidden_features * 2,
+            kernel_size=3,
+            stride=1,
+            padding=1,
+            groups=hidden_features * 2,
+            bias=bias,
+        )
 
         self.project_out = nn.Conv2d(hidden_features, dim, kernel_size=1, bias=bias)
 
@@ -79,7 +86,7 @@ class WithBias_LayerNorm(nn.Module):
 class LayerNorm(nn.Module):
     def __init__(self, dim, LayerNorm_type):
         super(LayerNorm, self).__init__()
-        if LayerNorm_type == 'BiasFree':
+        if LayerNorm_type == "BiasFree":
             self.body = BiasFree_LayerNorm(dim)
         else:
             self.body = WithBias_LayerNorm(dim)
@@ -122,21 +129,28 @@ class ISA(nn.Module):
 
 
 class SDA(nn.Module):
-    def __init__(self, n_feats, LayerNorm_type='WithBias'):
+    def __init__(self, n_feats, LayerNorm_type="WithBias"):
         super(SDA, self).__init__()
         i_feats = 2 * n_feats
         self.scale = nn.Parameter(torch.zeros((1, n_feats, 1, 1)), requires_grad=True)
 
         self.DConvs = nn.Sequential(
             nn.Conv2d(n_feats, n_feats, 5, 1, 5 // 2, groups=n_feats),
-            nn.Conv2d(n_feats, n_feats, 7, stride=1, padding=(7 // 2) * 3, groups=n_feats, dilation=3),
-            nn.Conv2d(n_feats, n_feats, 1, 1, 0))
+            nn.Conv2d(
+                n_feats,
+                n_feats,
+                7,
+                stride=1,
+                padding=(7 // 2) * 3,
+                groups=n_feats,
+                dilation=3,
+            ),
+            nn.Conv2d(n_feats, n_feats, 1, 1, 0),
+        )
 
-        self.proj_first = nn.Sequential(
-            nn.Conv2d(n_feats, i_feats, 1, 1, 0))
+        self.proj_first = nn.Sequential(nn.Conv2d(n_feats, i_feats, 1, 1, 0))
 
-        self.proj_last = nn.Sequential(
-            nn.Conv2d(n_feats, n_feats, 1, 1, 0))
+        self.proj_last = nn.Sequential(nn.Conv2d(n_feats, n_feats, 1, 1, 0))
         self.dim = n_feats
 
     def forward(self, x):
@@ -183,30 +197,63 @@ class UpsampleOneStep(nn.Sequential):
     def __init__(self, scale, num_feat, num_out_ch):
         self.num_feat = num_feat
         m = []
-        m.append(nn.Conv2d(num_feat, (scale ** 2) * num_out_ch, 3, 1, 1))
+        m.append(nn.Conv2d(num_feat, (scale**2) * num_out_ch, 3, 1, 1))
         m.append(nn.PixelShuffle(scale))
 
         super(UpsampleOneStep, self).__init__(*m)
 
 
 class UFONE(nn.Module):
-    def __init__(self, dim, ffn_expansion_factor, bias, LayerNorm_type, ITL_blocks, SAL_blocks, patch_size):
+    def __init__(
+        self,
+        dim,
+        ffn_expansion_factor,
+        bias,
+        LayerNorm_type,
+        ITL_blocks,
+        SAL_blocks,
+        patch_size,
+    ):
         super(UFONE, self).__init__()
-        ITL_body = [ITL(dim, ffn_expansion_factor, bias, LayerNorm_type) for _ in range(ITL_blocks)]
+        ITL_body = [
+            ITL(dim, ffn_expansion_factor, bias, LayerNorm_type)
+            for _ in range(ITL_blocks)
+        ]
         self.ITLs = nn.Sequential(*ITL_body)
-        SAL_body = [SAL(dim, ffn_expansion_factor, bias, LayerNorm_type) for _ in range(SAL_blocks)]
+        SAL_body = [
+            SAL(dim, ffn_expansion_factor, bias, LayerNorm_type)
+            for _ in range(SAL_blocks)
+        ]
         self.SALs = nn.Sequential(*SAL_body)
         self.patch_size = patch_size
 
     def forward(self, x):
         B, C, H, W = x.data.shape
-        local_features = x.view(B, C, H // self.patch_size, self.patch_size, W // self.patch_size, self.patch_size)
-        local_features = local_features.permute(0, 2, 4, 1, 3, 5).contiguous().view(-1, C, self.patch_size,
-                                                                                    self.patch_size)
+        local_features = x.view(
+            B,
+            C,
+            H // self.patch_size,
+            self.patch_size,
+            W // self.patch_size,
+            self.patch_size,
+        )
+        local_features = (
+            local_features.permute(0, 2, 4, 1, 3, 5)
+            .contiguous()
+            .view(-1, C, self.patch_size, self.patch_size)
+        )
         local_features = self.ITLs(local_features)
-        local_features = local_features.view(B, H // self.patch_size, W // self.patch_size, C, self.patch_size,
-                                             self.patch_size)
-        local_features = local_features.permute(0, 3, 1, 4, 2, 5).contiguous().view(B, C, H, W)
+        local_features = local_features.view(
+            B,
+            H // self.patch_size,
+            W // self.patch_size,
+            C,
+            self.patch_size,
+            self.patch_size,
+        )
+        local_features = (
+            local_features.permute(0, 3, 1, 4, 2, 5).contiguous().view(B, C, H, W)
+        )
         local_features = self.SALs(local_features)
         return local_features
 
@@ -222,7 +269,7 @@ class DITN(nn.Module):
         UFONE_blocks = 1
         ffn_expansion_factor = 2
         bias = False
-        LayerNorm_type = 'WithBias'
+        LayerNorm_type = "WithBias"
         patch_size = 8
         upscale = int(state_dict["UFONE.0.SALs.0.SDA.scale"].shape[0])
 
@@ -230,8 +277,18 @@ class DITN(nn.Module):
         self.sft = nn.Conv2d(inp_channels, dim, 3, 1, 1)
 
         ## UFONE Block1
-        UFONE_body = [UFONE(dim, ffn_expansion_factor, bias, LayerNorm_type, ITL_blocks, SAL_blocks, patch_size) for _
-                      in range(UFONE_blocks)]
+        UFONE_body = [
+            UFONE(
+                dim,
+                ffn_expansion_factor,
+                bias,
+                LayerNorm_type,
+                ITL_blocks,
+                SAL_blocks,
+                patch_size,
+            )
+            for _ in range(UFONE_blocks)
+        ]
         self.UFONE = nn.Sequential(*UFONE_body)
 
         self.conv_after_body = nn.Conv2d(dim, dim, 3, 1, 1)
@@ -253,7 +310,7 @@ class DITN(nn.Module):
             wsize = wsize * self.patch_sizes[i] // math.gcd(wsize, self.patch_sizes[i])
         mod_pad_h = (wsize - h % wsize) % wsize
         mod_pad_w = (wsize - w % wsize) % wsize
-        x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
+        x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h), "reflect")
         return x
 
     def forward(self, inp_img):
@@ -272,4 +329,4 @@ class DITN(nn.Module):
 
         out_dec_level1 = self.upsample(local_features + sft)
 
-        return out_dec_level1[:, :, 0:old_h * self.scale, 0:old_w * self.scale]
+        return out_dec_level1[:, :, 0 : old_h * self.scale, 0 : old_w * self.scale]

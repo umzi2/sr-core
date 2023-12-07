@@ -50,9 +50,11 @@ def read_cv(path: str) -> np.ndarray | None:
 
     img = None
     try:
-        img = cv2.imread(path, cv2.IMREAD_COLOR).astype(np.float32) / 255.
+        img = cv2.imread(path, cv2.IMREAD_COLOR).astype(np.float32) / 255.0
     except Exception as e:
-        raise RuntimeError(f'Error reading image image from path "{path}". Image may be corrupt') from e
+        raise RuntimeError(
+            f'Error reading image image from path "{path}". Image may be corrupt'
+        ) from e
 
     return img
 
@@ -69,7 +71,9 @@ def cv_save_image(path: str, img: np.ndarray, params: List[int]):
     else:
         dirname, _, extension = split_file_path(path)
         try:
-            temp_filename = f'temp-{"".join(random.choices(string.ascii_letters, k=16))}.{extension}'
+            temp_filename = (
+                f'temp-{"".join(random.choices(string.ascii_letters, k=16))}.{extension}'
+            )
             full_temp_path = os.path.join(dirname, temp_filename)
             cv2.imwrite(full_temp_path, img, params)
             os.rename(full_temp_path, path)
@@ -77,6 +81,7 @@ def cv_save_image(path: str, img: np.ndarray, params: List[int]):
             _, buf_img = cv2.imencode(f".{extension}", img, params)
             with open(path, "wb") as outf:
                 outf.write(buf_img)  # type: ignore
+
 
 def img2tensor(imgs, bgr2rgb=True, float32=True):
     """Numpy array to tensor.
@@ -93,8 +98,8 @@ def img2tensor(imgs, bgr2rgb=True, float32=True):
 
     def _totensor(img, bgr2rgb, float32):
         if img.shape[2] == 3 and bgr2rgb:
-            if img.dtype == 'float64':
-                img = img.astype('float32')
+            if img.dtype == "float64":
+                img = img.astype("float32")
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = torch.from_numpy(img.transpose(2, 0, 1))
         if float32:
@@ -105,6 +110,7 @@ def img2tensor(imgs, bgr2rgb=True, float32=True):
         return [_totensor(img, bgr2rgb, float32) for img in imgs]
     else:
         return _totensor(imgs, bgr2rgb, float32)
+
 
 def tensor2img(tensor, rgb2bgr=True, out_type=np.uint8, min_max=(0, 1)):
     """Convert torch Tensors into image numpy arrays.
@@ -127,9 +133,11 @@ def tensor2img(tensor, rgb2bgr=True, out_type=np.uint8, min_max=(0, 1)):
         (Tensor or list): 3D ndarray of shape (H x W x C) OR 2D ndarray of
         shape (H x W). The channel order is BGR.
     """
-    if not (torch.is_tensor(tensor) or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
-        raise TypeError(
-            f'tensor or list of tensors expected, got {type(tensor)}')
+    if not (
+        torch.is_tensor(tensor)
+        or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))
+    ):
+        raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
     if torch.is_tensor(tensor):
         tensor = [tensor]
@@ -140,8 +148,9 @@ def tensor2img(tensor, rgb2bgr=True, out_type=np.uint8, min_max=(0, 1)):
 
         n_dim = _tensor.dim()
         if n_dim == 4:
-            img_np = make_grid(_tensor, nrow=int(
-                math.sqrt(_tensor.size(0))), normalize=False).numpy()
+            img_np = make_grid(
+                _tensor, nrow=int(math.sqrt(_tensor.size(0))), normalize=False
+            ).numpy()
             img_np = img_np.transpose(1, 2, 0)
             if rgb2bgr:
                 img_np = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
@@ -157,7 +166,9 @@ def tensor2img(tensor, rgb2bgr=True, out_type=np.uint8, min_max=(0, 1)):
             img_np = _tensor.numpy()
         else:
             raise TypeError(
-                f'Only support 4D, 3D or 2D tensor. But received with dimension: {n_dim}')
+                "Only support 4D, 3D or 2D tensor. But received with dimension:"
+                f" {n_dim}"
+            )
         if out_type == np.uint8:
             # Unlike MATLAB, numpy.unit8() WILL NOT round by default.
             img_np = (img_np * 255.0).round()

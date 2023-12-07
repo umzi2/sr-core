@@ -8,9 +8,9 @@ from utils.tile import auto_split
 
 
 class Upscaler:
-    def __init__(self, model_path, input_folder, output_folder,tile_size=256):
+    def __init__(self, model_path, input_folder, output_folder, tile_size=256):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        state_dict = torch.load(model_path, map_location='cpu')
+        state_dict = torch.load(model_path, map_location="cpu")
 
         model = load_model(state_dict)
         model.eval()
@@ -42,8 +42,7 @@ class Upscaler:
                 if img is None:
                     raise RuntimeError(f"Unsupported image type: {filename}")
 
-                result = auto_split(img,self.tile_max_size, self.__upscale)
-
+                result = auto_split(img, self.tile_max_size, self.__upscale)
 
                 output_image_path = os.path.join(self.output_folder, filename)
                 cv_save_image(output_image_path, result, [])

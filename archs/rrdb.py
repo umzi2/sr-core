@@ -41,7 +41,7 @@ class RRDBNet(nn.Module):
         """
         super(RRDBNet, self).__init__()
         self.model_arch = "ESRGAN"
-        self.name ="ESRGAN"
+        self.name = "ESRGAN"
         self.sub_type = "SR"
 
         self.state = state_dict
@@ -195,7 +195,6 @@ class RRDBNet(nn.Module):
             self.scale //= self.shuffle_factor
 
         self.load_state_dict(self.state, strict=False)
-
 
     def new_to_old_arch(self, state):
         """Convert a new-arch model state dictionary to an old-arch dictionary."""

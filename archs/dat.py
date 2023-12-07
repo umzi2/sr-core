@@ -342,22 +342,20 @@ class Adaptive_Spatial_Attention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(drop)
 
-        self.attns = nn.ModuleList(
-            [
-                Spatial_Attention(
-                    dim // 2,
-                    idx=i,
-                    split_size=split_size,
-                    num_heads=num_heads // 2,
-                    dim_out=dim // 2,
-                    qk_scale=qk_scale,
-                    attn_drop=attn_drop,
-                    proj_drop=drop,
-                    position_bias=True,
-                )
-                for i in range(self.branch_num)
-            ]
-        )
+        self.attns = nn.ModuleList([
+            Spatial_Attention(
+                dim // 2,
+                idx=i,
+                split_size=split_size,
+                num_heads=num_heads // 2,
+                dim_out=dim // 2,
+                qk_scale=qk_scale,
+                attn_drop=attn_drop,
+                proj_drop=drop,
+                position_bias=True,
+            )
+            for i in range(self.branch_num)
+        ])
 
         if (self.rg_idx % 2 == 0 and self.b_idx > 0 and (self.b_idx - 2) % 4 == 0) or (
             self.rg_idx % 2 != 0 and self.b_idx % 4 == 0
@@ -793,28 +791,26 @@ class ResidualGroup(nn.Module):
         self.use_chk = use_chk
         self.reso = reso
 
-        self.blocks = nn.ModuleList(
-            [
-                DATB(
-                    dim=dim,
-                    num_heads=num_heads,
-                    reso=reso,
-                    split_size=split_size,
-                    shift_size=[split_size[0] // 2, split_size[1] // 2],
-                    expansion_factor=expansion_factor,
-                    qkv_bias=qkv_bias,
-                    qk_scale=qk_scale,
-                    drop=drop,
-                    attn_drop=attn_drop,
-                    drop_path=drop_paths[i],
-                    act_layer=act_layer,
-                    norm_layer=norm_layer,
-                    rg_idx=rg_idx,
-                    b_idx=i,
-                )
-                for i in range(depth)
-            ]
-        )
+        self.blocks = nn.ModuleList([
+            DATB(
+                dim=dim,
+                num_heads=num_heads,
+                reso=reso,
+                split_size=split_size,
+                shift_size=[split_size[0] // 2, split_size[1] // 2],
+                expansion_factor=expansion_factor,
+                qkv_bias=qkv_bias,
+                qk_scale=qk_scale,
+                drop=drop,
+                attn_drop=attn_drop,
+                drop_path=drop_paths[i],
+                act_layer=act_layer,
+                norm_layer=norm_layer,
+                rg_idx=rg_idx,
+                b_idx=i,
+            )
+            for i in range(depth)
+        ])
 
         if resi_connection == "1conv":
             self.conv = nn.Conv2d(dim, dim, 3, 1, 1)
@@ -865,7 +861,7 @@ class Upsample(nn.Sequential):
             m.append(nn.PixelShuffle(3))
         else:
             raise ValueError(
-                f"scale {scale} is not supported. " "Supported scales: 2^n and 3."
+                f"scale {scale} is not supported. Supported scales: 2^n and 3."
             )
         super(Upsample, self).__init__(*m)
 
@@ -1071,9 +1067,9 @@ class DAT(nn.Module):
         # ------------------------- 2, Deep Feature Extraction ------------------------- #
         self.num_layers = len(depth)
         self.use_chk = use_chk
-        self.num_features = (
-            self.embed_dim
-        ) = embed_dim  # num_features for consistency with other models
+        self.num_features = self.embed_dim = (
+            embed_dim  # num_features for consistency with other models
+        )
         heads = num_heads
 
         self.before_RG = nn.Sequential(
