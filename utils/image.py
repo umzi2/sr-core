@@ -71,9 +71,7 @@ def cv_save_image(path: str, img: np.ndarray, params: List[int]):
     else:
         dirname, _, extension = split_file_path(path)
         try:
-            temp_filename = (
-                f'temp-{"".join(random.choices(string.ascii_letters, k=16))}.{extension}'
-            )
+            temp_filename = f'temp-{"".join(random.choices(string.ascii_letters, k=16))}.{extension}'
             full_temp_path = os.path.join(dirname, temp_filename)
             cv2.imwrite(full_temp_path, img, params)
             os.rename(full_temp_path, path)
