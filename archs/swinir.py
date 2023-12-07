@@ -14,9 +14,9 @@ import torch.utils.checkpoint as checkpoint
 
 # Originally from the timm package
 
-from .utils import to_2tuple
-from .utils import DropPath
-from .utils import trunc_normal_
+from .utils.torch_internals import to_2tuple
+from .utils.drop import DropPath
+from .utils.trunc import trunc_normal_
 
 
 class Mlp(nn.Module):

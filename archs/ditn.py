@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
 
+from archs.utils.state import get_seq_len
+
 
 def default_conv(in_channels, out_channels, kernel_size, bias=True):
     return nn.Conv2d(
@@ -262,16 +264,18 @@ class DITN(nn.Module):
     def __init__(self, state_dict, **kwargs):
         super(DITN, self).__init__()
 
-        inp_channels = int(state_dict["sft.weight"].shape[1])
-        dim = 60
-        ITL_blocks = 4
-        SAL_blocks = 4
-        UFONE_blocks = 1
-        ffn_expansion_factor = 2
-        bias = False
+        inp_channels = state_dict["sft.weight"].shape[1]
+        dim = state_dict["sft.weight"].shape[0]
+        UFONE_blocks = get_seq_len(state_dict, "UFONE")
+        ITL_blocks = get_seq_len(state_dict, "UFONE.0.ITLs")
+        SAL_blocks = get_seq_len(state_dict, "UFONE.0.SALs")
+        ffn_expansion_factor = (
+            state_dict["UFONE.0.ITLs.0.ffn.project_in.weight"].shape[0] / 2 / dim
+        )
+        bias = "UFONE.0.ITLs.0.attn.project_out.bias" in state_dict
         LayerNorm_type = "WithBias"
         patch_size = 8
-        upscale = int(state_dict["UFONE.0.SALs.0.SDA.scale"].shape[0])
+        upscale = int(math.sqrt(state_dict["upsample.0.weight"].shape[0] / 3))
 
         self.patch_size = patch_size
         self.sft = nn.Conv2d(inp_channels, dim, 3, 1, 1)

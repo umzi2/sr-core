@@ -2,38 +2,6 @@ import torch
 from torch import nn
 import math
 import warnings
-import collections.abc
-from itertools import repeat
-
-
-def drop_path(x, drop_prob: float = 0.0, training: bool = False):
-    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
-
-    From: https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/layers/drop.py
-    """
-    if drop_prob == 0.0 or not training:
-        return x
-    keep_prob = 1 - drop_prob
-    # work with diff dim tensors, not just 2D ConvNets
-    shape = (x.shape[0],) + (1,) * (x.ndim - 1)
-    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
-    random_tensor.floor_()  # binarize
-    output = x.div(keep_prob) * random_tensor
-    return output
-
-
-class DropPath(nn.Module):
-    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
-
-    From: https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/layers/drop.py
-    """
-
-    def __init__(self, drop_prob=None):
-        super(DropPath, self).__init__()
-        self.drop_prob = drop_prob
-
-    def forward(self, x):
-        return drop_path(x, self.drop_prob, self.training)
 
 
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
@@ -99,36 +67,3 @@ def trunc_normal_(
         >>> nn.init.trunc_normal_(w)
     """
     return _no_grad_trunc_normal_(tensor, mean, std, a, b)
-
-
-""" Layer/Module Helpers
-Hacked together by / Copyright 2020 Ross Wightman
-"""
-
-
-# From PyTorch internals
-
-
-def _ntuple(n):
-    def parse(x):
-        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
-            return x
-        return tuple(repeat(x, n))
-
-    return parse
-
-
-to_1tuple = _ntuple(1)
-to_2tuple = _ntuple(2)
-to_3tuple = _ntuple(3)
-to_4tuple = _ntuple(4)
-to_ntuple = _ntuple
-
-
-def make_divisible(v, divisor=8, min_value=None, round_limit=0.9):
-    min_value = min_value or divisor
-    new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
-    # Make sure that round down does not go down by more than 10%.
-    if new_v < round_limit * v:
-        new_v += divisor
-    return new_v

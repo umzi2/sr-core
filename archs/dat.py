@@ -8,11 +8,10 @@ import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 from einops import rearrange
 from einops.layers.torch import Rearrange
-from torch import Tensor
 from torch.nn import functional as F
 
-from .utils import DropPath
-from .utils import trunc_normal_
+from .utils.drop import DropPath
+from .utils.trunc import trunc_normal_
 
 
 def img2windows(img, H_sp, W_sp):
