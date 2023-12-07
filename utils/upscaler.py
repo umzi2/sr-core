@@ -6,11 +6,15 @@ from utils.cuda import safe_cuda_cache_empty
 from utils.image import cv_save_image, img2tensor, tensor2img, read_cv
 from utils.tile import auto_split
 
+from utils.unpickler import RestrictedUnpickle
+
 
 class Upscaler:
     def __init__(self, model_path, input_folder, output_folder, tile_size=256):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        state_dict = torch.load(model_path, map_location="cpu")
+        state_dict = torch.load(
+            model_path, map_location="cpu", pickle_module=RestrictedUnpickle
+        )
 
         model = load_model(state_dict)
         model.eval()
@@ -21,6 +25,7 @@ class Upscaler:
         self.input_folder = input_folder
         self.output_folder = output_folder
         self.tile_max_size = tile_size
+
         print(f"Model Architecture: {model.name}")
 
     def __upscale(self, img: np.ndarray) -> np.ndarray:
