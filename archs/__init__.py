@@ -1,3 +1,4 @@
+from .span import SPAN
 from .types import PyTorchModel
 from .ditn import DITN
 from .omnisr import OmniSR
@@ -27,6 +28,8 @@ def load_model(state_dict) -> PyTorchModel:
         model = SwinIR(state_dict)
     elif "layers.0.blocks.2.attn.attn_mask_0" in state_dict_keys:
         model = DAT(state_dict)
+    elif "block_1.c1_r.sk.weight" in state_dict_keys:
+        model = SPAN(state_dict)
     else:
         try:
             model = ESRGAN(state_dict)
