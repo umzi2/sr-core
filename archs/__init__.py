@@ -6,6 +6,7 @@ from .rrdb import RRDBNet as ESRGAN
 from .srvgg import SRVGGNetCompact as RealESRGANv2
 from .dat import DAT
 from .swinir import SwinIR
+from .realcugan import cugan
 
 
 def load_model(state_dict) -> PyTorchModel:
@@ -18,6 +19,10 @@ def load_model(state_dict) -> PyTorchModel:
     state_dict_keys = list(state_dict.keys())
 
     model: PyTorchModel | None = None
+    try:
+        cugan3x = state_dict["unet1.conv_bottom.weight"].shape[2]
+    except:
+        cugan3x = 0
     if "UFONE.0.ITLs.0.attn.temperature" in state_dict_keys:
         model = DITN(state_dict)
     elif "residual_layer.0.residual_layer.0.layer.0.fn.0.weight" in state_dict_keys:
@@ -30,11 +35,14 @@ def load_model(state_dict) -> PyTorchModel:
         model = DAT(state_dict)
     elif "block_1.c1_r.sk.weight" in state_dict_keys:
         model = SPAN(state_dict)
+    elif 'conv_final.weight' in state_dict_keys or 'unet1.conv1.conv.0.weight' in state_dict_keys or cugan3x == 5:
+        model = cugan(state_dict)
     else:
         try:
             model = ESRGAN(state_dict)
         except:
             # pylint: disable=raise-missing-from
+            print(state_dict_keys)
             raise Exception("UNSUPPORTED_MODEL")
 
     model.load_state_dict(state_dict, strict=False)

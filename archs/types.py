@@ -7,5 +7,6 @@ from .rrdb import RRDBNet as ESRGAN
 from .srvgg import SRVGGNetCompact as RealESRGANv2
 from .dat import DAT
 from .swinir import SwinIR
+from .realcugan import cugan
 
-PyTorchModel = Union[DITN, OmniSR, ESRGAN, RealESRGANv2, DAT, SwinIR, SPAN]
+PyTorchModel = Union[DITN, OmniSR, ESRGAN, RealESRGANv2, DAT, SwinIR, SPAN, cugan]
