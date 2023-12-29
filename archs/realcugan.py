@@ -271,8 +271,10 @@ class cugan(nn.Module):
             out_channels = state_dict["unet2.conv_bottom.weight"].shape[0]
 
         self.scale = scale
-        self.pro_mode = True
-
+        pro = False
+        if list(state_dict.keys())[-1] == "unet2.conv_bottom.bias" or "pro" in state_dict:
+            pro = True
+        self.pro_mode = pro
         if self.scale == 1:
             raise ValueError(f'1x scale ratio is unsupported. Please use 2x, 3x or 4x.')
 
