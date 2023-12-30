@@ -26,8 +26,6 @@ class Upscaler:
         self.output_folder = output_folder
         self.tile_max_size = tile_size
 
-        print(f"Model Architecture: {model.name}")
-
     def __upscale(self, img: np.ndarray) -> np.ndarray:
         tensor = img2tensor(img).unsqueeze(0).to(self.device)
 
@@ -40,7 +38,7 @@ class Upscaler:
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
-        for filename in tqdm(os.listdir(self.input_folder)):
+        for filename in tqdm(os.listdir(self.input_folder), desc=self.model.name, leave=True):
             input_image_path = os.path.join(self.input_folder, filename)
             try:
                 img = read_cv(input_image_path)
