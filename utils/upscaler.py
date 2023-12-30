@@ -5,7 +5,7 @@ from archs import load_model
 from utils.cuda import safe_cuda_cache_empty
 from utils.image import cv_save_image, img2tensor, tensor2img, read_cv
 from utils.tile import auto_split
-
+from tqdm import tqdm
 from utils.unpickler import RestrictedUnpickle
 
 
@@ -40,7 +40,7 @@ class Upscaler:
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
-        for filename in os.listdir(self.input_folder):
+        for filename in tqdm(os.listdir(self.input_folder)):
             input_image_path = os.path.join(self.input_folder, filename)
             try:
                 img = read_cv(input_image_path)
@@ -54,7 +54,7 @@ class Upscaler:
 
             except RuntimeError as e:
                 print(f"[FAILED] {filename} : {e}")
-            else:
-                print(f"[DONE] {filename}")
+            #else:
+            #    print(f"[DONE] {filename}")
 
         safe_cuda_cache_empty()
