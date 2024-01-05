@@ -192,11 +192,6 @@ def auto_split(
         tile_size_x = math.ceil(w / tile_count_x)
         tile_size_y = math.ceil(h / tile_count_y)
 
-        #print(
-        #    f"Currently {tile_count_x}x{tile_count_y} tiles each"
-        #    f" {tile_size_x}x{tile_size_y}px."
-        #)
-
         for y in range(0, tile_count_y):
             if restart:
                 break

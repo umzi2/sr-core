@@ -53,7 +53,6 @@ class Upscaler:
 
             except RuntimeError as e:
                 print(f"[FAILED] {filename} : {e}")
-            #else:
-            #    print(f"[DONE] {filename}")
+
 
         safe_cuda_cache_empty()
