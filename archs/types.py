@@ -10,4 +10,4 @@ from .swinir import SwinIR
 from .realcugan import cugan
 from .safmn import SAFMN
 
-PyTorchModel = Union[DITN, OmniSR, ESRGAN, RealESRGANv2, DAT, SwinIR, SPAN, cugan,SAFMN]
+PyTorchModel = Union[DITN, OmniSR, ESRGAN, RealESRGANv2, DAT, SwinIR, SPAN, cugan, SAFMN]
