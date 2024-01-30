@@ -832,11 +832,6 @@ class SwinIR(nn.Module):
         img_size = 64
         patch_size = 1
         in_chans = 3
-        embed_dim = 96
-        depths = [6, 6, 6, 6]
-        num_heads = [6, 6, 6, 6]
-        window_size = 7
-        mlp_ratio = 4.0
         qkv_bias = True
         qk_scale = None
         drop_rate = 0.0
@@ -846,14 +841,6 @@ class SwinIR(nn.Module):
         ape = False
         patch_norm = True
         use_checkpoint = False
-        upscale = 2
-        img_range = 1.0
-        upsampler = ""
-        resi_connection = "1conv"
-        num_feat = 64
-        num_in_ch = in_chans
-        num_out_ch = in_chans
-        supports_fp16 = True
         self.start_unshuffle = 1
 
         self.model_arch = "SwinIR"
@@ -990,7 +977,7 @@ class SwinIR(nn.Module):
         self.img_size = img_size
         self.img_range = img_range
         self.resi_connection = resi_connection
-
+        self.input_channels = num_in_ch
         self.supports_fp16 = False  # Too much weirdness to support this at the moment
         self.supports_bfp16 = True
         self.min_size_restriction = 16

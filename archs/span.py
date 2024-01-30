@@ -230,13 +230,14 @@ class SPAN(nn.Module):
 
     def __init__(self, state_dict):
         super(SPAN, self).__init__()
-
-        num_in_ch = 3
-        num_out_ch = 3
+        #сука, незабудь переписать
+        num_in_ch = state_dict["conv_1.sk.weight"].shape[1]
+        num_out_ch = num_in_ch
         feature_channels = (48)
         img_range = (255.0)
         rgb_mean = (0.4488, 0.4371, 0.4040)
         self.name = "span"
+        self.input_channels = num_in_ch
 
         upscale = int(math.sqrt(state_dict["upsampler.0.weight"].shape[0] / 3))
         bias = "block_1.c1_r.sk.bias" in state_dict

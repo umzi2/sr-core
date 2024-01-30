@@ -270,6 +270,7 @@ class cugan(nn.Module):
             in_channels = state_dict["unet1.conv1.conv.0.weight"].shape[1]
             out_channels = state_dict["unet2.conv_bottom.weight"].shape[0]
 
+        self.input_channels = in_channels
         self.scale = scale
         pro = False
         if list(state_dict.keys())[-1] == "unet2.conv_bottom.bias" or "pro" in state_dict:
