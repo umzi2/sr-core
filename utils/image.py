@@ -114,18 +114,17 @@ def img2tensor(imgs, bgr2rgb=True, float32=True):
     """
 
     def _totensor(img, bgr2rgb, float32):
+        if img.dtype == "float64":
+            img = img.astype("float32")
+
         if len(img.shape) > 2 and img.shape[2] == 3 and bgr2rgb:
-            if img.dtype == "float64":
-                img = img.astype("float32")
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         if len(img.shape) == 2:
-            if img.dtype == "float64":
-                img = img.astype("float32")
             img = torch.from_numpy(img[None, ...])
-
         else:
             img = torch.from_numpy(img.transpose(2, 0, 1))
+
         if float32:
             img = img.float()
 
