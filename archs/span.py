@@ -236,11 +236,11 @@ class SPAN(nn.Module):
     def __init__(self, state_dict):
         super().__init__()
 
-        upscale = int(math.sqrt(state_dict["upsampler.0.weight"].shape[0] / 3))
+        upscale = max(1, int(math.sqrt(state_dict["upsampler.0.weight"].shape[0] / 3)))
         bias = "block_1.c1_r.sk.bias" in state_dict
         img_range = 1.0
         rgb_mean = (0.4488, 0.4371, 0.4040)
-        norm = True
+        self.norm = True
         num_in_ch = state_dict["conv_1.sk.weight"].shape[1]
         feature_channels = state_dict["conv_1.sk.weight"].shape[0]
         num_out_ch = num_in_ch
@@ -248,10 +248,9 @@ class SPAN(nn.Module):
         self.out_channels = num_out_ch
         self.img_range = img_range
         if 'no_norm' in state_dict:
-            norm = False
+            self.norm = False
         else:
             self.mean = torch.Tensor(rgb_mean).view(1, 3, 1, 1)
-        self.norm = norm
         self.input_channels = num_in_ch
         self.name = "span"
         self.conv_1 = Conv3XC(self.in_channels, feature_channels, gain1=2, s=1)
@@ -275,8 +274,6 @@ class SPAN(nn.Module):
         if self.norm:
             self.mean = self.mean.type_as(x)
             x = (x - self.mean) * self.img_range
-        if self.in_channels == 1:
-            x = x.squeeze(0)
 
         out_feature = self.conv_1(x)
 
