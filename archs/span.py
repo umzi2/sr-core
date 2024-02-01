@@ -238,7 +238,7 @@ class SPAN(nn.Module):
 
         upscale = max(1, int(math.sqrt(state_dict["upsampler.0.weight"].shape[0] / 3)))
         bias = "block_1.c1_r.sk.bias" in state_dict
-        img_range = 1.0
+        img_range = 255.
         rgb_mean = (0.4488, 0.4371, 0.4040)
         self.norm = True
         num_in_ch = state_dict["conv_1.sk.weight"].shape[1]
