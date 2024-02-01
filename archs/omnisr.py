@@ -586,13 +586,16 @@ class OmniSR(nn.Module):
         self.up_scale = up_scale
         residual_layer = []
 
+
+
+
         for _ in range(res_num):
             temp_res = OSAG(
                 channel_num=num_feat,
+                bias=bias,
                 block_num=block_num,
-                ffn_bias=ffn_bias,
+                window_size=self.window_size,
                 pe=pe,
-                **kwargs
             )
             residual_layer.append(temp_res)
         self.residual_layer = nn.Sequential(*residual_layer)
@@ -613,7 +616,7 @@ class OmniSR(nn.Module):
             bias=bias,
         )
         self.up = pixelshuffle_block(num_feat, num_out_ch, up_scale, bias=bias)
-
+        self.input_channels = num_in_ch
         self.name = "OmniSR"
 
     def check_image_size(self, x):
@@ -626,7 +629,7 @@ class OmniSR(nn.Module):
         return x
 
     def forward(self, x):
-        h, w = x.shape[2:]
+        H, W = x.shape[2:]
         x = self.check_image_size(x)
 
         residual = self.input(x)
@@ -636,5 +639,5 @@ class OmniSR(nn.Module):
         out = torch.add(self.output(out), residual)
         out = self.up(out)
 
-        out = out[:, :, : h * self.up_scale, : w * self.up_scale]
+        out = out[:, :, : H * self.up_scale, : W * self.up_scale]
         return out

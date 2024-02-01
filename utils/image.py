@@ -44,19 +44,38 @@ def get_h_w_c(image: np.ndarray) -> Tuple[int, int, int]:
     return h, w, c
 
 
-def read_cv(path: str) -> np.ndarray | None:
-    if get_ext(path) not in get_opencv_formats():
-        return None
+def read_cv(file_path: str, flag='color', float32=True) -> np.ndarray | None:
+    """Read an image from bytes.
 
-    img = None
+    Args:
+        file_path: Image file path.
+        flag (str): Flags specifying the color type of a loaded image,
+            candidates are `color`, `grayscale` and `unchanged`.
+        float32 (bool): Whether to change to float32., If True, will also norm
+            to [0, 1]. Default: False.
+
+    Returns:
+        ndarray: Loaded image array.
+    """
+
+    if get_ext(file_path) not in get_opencv_formats():
+        raise RuntimeError(f'Unsupported image format for file "{file_path}"')
+
+    imread_flags = {
+        'color': cv2.IMREAD_COLOR,
+        'grayscale': cv2.IMREAD_GRAYSCALE,
+        'unchanged': cv2.IMREAD_UNCHANGED
+    }
+
     try:
-        img = cv2.imread(path, cv2.IMREAD_COLOR).astype(np.float32) / 255.0
+        img = cv2.imread(file_path, imread_flags[flag])
+        if float32:
+            img = img.astype(np.float32) / 255.
+        return img
     except Exception as e:
         raise RuntimeError(
-            f'Error reading image image from path "{path}". Image may be corrupt'
+            f'Error reading image image from path "{file_path}". Image may be corrupt'
         ) from e
-
-    return img
 
 
 def cv_save_image(path: str, img: np.ndarray, params: List[int]):
@@ -95,13 +114,20 @@ def img2tensor(imgs, bgr2rgb=True, float32=True):
     """
 
     def _totensor(img, bgr2rgb, float32):
-        if img.shape[2] == 3 and bgr2rgb:
-            if img.dtype == "float64":
-                img = img.astype("float32")
+        if img.dtype == "float64":
+            img = img.astype("float32")
+
+        if len(img.shape) > 2 and img.shape[2] == 3 and bgr2rgb:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = torch.from_numpy(img.transpose(2, 0, 1))
+
+        if len(img.shape) == 2:
+            img = torch.from_numpy(img[None, ...])
+        else:
+            img = torch.from_numpy(img.transpose(2, 0, 1))
+
         if float32:
             img = img.float()
+
         return img
 
     if isinstance(imgs, list):
@@ -132,8 +158,8 @@ def tensor2img(tensor, rgb2bgr=True, out_type=np.uint8, min_max=(0, 1)):
         shape (H x W). The channel order is BGR.
     """
     if not (
-        torch.is_tensor(tensor)
-        or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))
+            torch.is_tensor(tensor)
+            or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))
     ):
         raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 

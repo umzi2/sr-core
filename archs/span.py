@@ -1,17 +1,15 @@
-"""
-For fix: Missing key(s) in state_dict: "conv_1.eval_conv.weight"...
-The eval layer has been removed
-"""
-import math
 from collections import OrderedDict
+from typing import Literal
+import math
+
 import torch
-from torch import nn as nn
 import torch.nn.functional as F
+from torch import nn as nn
 
 
 def _make_pair(value):
     if isinstance(value, int):
-        value = (value,) * 2
+        return (value, value)
     return value
 
 
@@ -47,9 +45,7 @@ def activation(act_type, inplace=True, neg_slope=0.05, n_prelu=1):
     elif act_type == "prelu":
         layer = nn.PReLU(num_parameters=n_prelu, init=neg_slope)
     else:
-        raise NotImplementedError(
-            "activation layer [{:s}] is not found".format(act_type)
-        )
+        raise NotImplementedError(f"activation layer [{act_type:s}] is not found")
     return layer
 
 
@@ -81,14 +77,23 @@ def pixelshuffle_block(in_channels, out_channels, upscale_factor=2, kernel_size=
     """
     Upsample features according to `upscale_factor`.
     """
-    conv = conv_layer(in_channels, out_channels * (upscale_factor**2), kernel_size)
+    conv = conv_layer(in_channels, out_channels * (upscale_factor ** 2), kernel_size)
     pixel_shuffle = nn.PixelShuffle(upscale_factor)
     return sequential(conv, pixel_shuffle)
 
 
 class Conv3XC(nn.Module):
-    def __init__(self, c_in, c_out, gain1=1, gain2=0, s=1, bias=True, relu=False):
-        super(Conv3XC, self).__init__()
+    def __init__(
+            self,
+            c_in: int,
+            c_out: int,
+            gain1=1,
+            gain2=0,
+            s=1,
+            bias: Literal[True] = True,
+            relu=False,
+    ):
+        super().__init__()
         self.weight_concat = None
         self.bias_concat = None
         self.update_params_flag = False
@@ -138,7 +143,7 @@ class Conv3XC(nn.Module):
             bias=bias,
         )
         self.eval_conv.weight.requires_grad = False
-        self.eval_conv.bias.requires_grad = False
+        self.eval_conv.bias.requires_grad = False  # type: ignore
         self.update_params()
 
     def update_params(self):
@@ -164,7 +169,7 @@ class Conv3XC(nn.Module):
         self.bias_concat = (w3 * b.reshape(1, -1, 1, 1)).sum((1, 2, 3)) + b3
 
         sk_w = self.sk.weight.data.clone().detach()
-        sk_b = self.sk.bias.data.clone().detach()
+        sk_b = self.sk.bias.data.clone().detach()  # type: ignore
         target_kernel_size = 3
 
         H_pixels_to_pad = (target_kernel_size - 1) // 2
@@ -177,7 +182,7 @@ class Conv3XC(nn.Module):
         self.bias_concat = self.bias_concat + sk_b
 
         self.eval_conv.weight.data = self.weight_concat
-        self.eval_conv.bias.data = self.bias_concat
+        self.eval_conv.bias.data = self.bias_concat  # type: ignore
 
     def forward(self, x):
         if self.training:
@@ -195,7 +200,7 @@ class Conv3XC(nn.Module):
 
 class SPAB(nn.Module):
     def __init__(self, in_channels, mid_channels=None, out_channels=None, bias=False):
-        super(SPAB, self).__init__()
+        super().__init__()
         if mid_channels is None:
             mid_channels = in_channels
         if out_channels is None:
@@ -229,24 +234,28 @@ class SPAN(nn.Module):
     """
 
     def __init__(self, state_dict):
-        super(SPAN, self).__init__()
+        super().__init__()
 
-        num_in_ch = 3
-        num_out_ch = 3
-        feature_channels = (48)
-        img_range = (255.0)
-        rgb_mean = (0.4488, 0.4371, 0.4040)
-        self.name = "span"
-
-        upscale = int(math.sqrt(state_dict["upsampler.0.weight"].shape[0] / 3))
+        upscale = max(1, int(math.sqrt(state_dict["upsampler.0.weight"].shape[0] / 3)))
         bias = "block_1.c1_r.sk.bias" in state_dict
-
-        in_channels = num_in_ch
-        out_channels = num_out_ch
+        img_range = 1.0
+        rgb_mean = (0.4488, 0.4371, 0.4040)
+        self.norm = True
+        num_in_ch = state_dict["conv_1.sk.weight"].shape[1]
+        feature_channels = state_dict["conv_1.sk.weight"].shape[0]
+        num_out_ch = num_in_ch
+        self.in_channels = num_in_ch
+        self.out_channels = num_out_ch
         self.img_range = img_range
-        self.mean = torch.Tensor(rgb_mean).view(1, 3, 1, 1)
-
-        self.conv_1 = Conv3XC(in_channels, feature_channels, gain1=2, s=1)
+        norm = True
+        if 'no_norm' in state_dict:
+            norm = False
+        else:
+            self.mean = torch.Tensor(rgb_mean).view(1, 3, 1, 1)
+        self.norm = norm
+        self.input_channels = num_in_ch
+        self.name = "span"
+        self.conv_1 = Conv3XC(self.in_channels, feature_channels, gain1=2, s=1)
         self.block_1 = SPAB(feature_channels, bias=bias)
         self.block_2 = SPAB(feature_channels, bias=bias)
         self.block_3 = SPAB(feature_channels, bias=bias)
@@ -260,22 +269,23 @@ class SPAN(nn.Module):
         self.conv_2 = Conv3XC(feature_channels, feature_channels, gain1=2, s=1)
 
         self.upsampler = pixelshuffle_block(
-            feature_channels, out_channels, upscale_factor=upscale
+            feature_channels, self.out_channels, upscale_factor=upscale
         )
 
     def forward(self, x):
-        self.mean = self.mean.type_as(x)
-        x = (x - self.mean) * self.img_range
+        if self.norm:
+            self.mean = self.mean.type_as(x)
+            x = (x - self.mean) * self.img_range
 
         out_feature = self.conv_1(x)
 
-        out_b1, _, att1 = self.block_1(out_feature)
-        out_b2, _, att2 = self.block_2(out_b1)
-        out_b3, _, att3 = self.block_3(out_b2)
+        out_b1, _, _att1 = self.block_1(out_feature)
+        out_b2, _, _att2 = self.block_2(out_b1)
+        out_b3, _, _att3 = self.block_3(out_b2)
 
-        out_b4, _, att4 = self.block_4(out_b3)
-        out_b5, _, att5 = self.block_5(out_b4)
-        out_b6, out_b5_2, att6 = self.block_6(out_b5)
+        out_b4, _, _att4 = self.block_4(out_b3)
+        out_b5, _, _att5 = self.block_5(out_b4)
+        out_b6, out_b5_2, _att6 = self.block_6(out_b5)
 
         out_b6 = self.conv_2(out_b6)
         out = self.conv_cat(torch.cat([out_feature, out_b6, out_b1, out_b5_2], 1))

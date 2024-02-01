@@ -304,7 +304,7 @@ class DITN(nn.Module):
         self.scale = upscale
         self.SAL_blocks = SAL_blocks
         self.ITL_blocks = ITL_blocks
-
+        self.input_channels = inp_channels
         self.name = "DITN"
 
     def check_image_size(self, x):

@@ -29,7 +29,7 @@ class SRVGGNetCompact(nn.Module):
         self.model_arch = "SRVGG (RealESRGAN)"
         self.name = "Compact"
         self.sub_type = "SR"
-
+        self.input_channels = 3 
         self.act_type = act_type
 
         self.state = state_dict

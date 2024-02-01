@@ -944,7 +944,6 @@ class DAT(nn.Module):
         self.name = "DAT"
         self.sub_type = "SR"
         self.state = state_dict
-
         state_keys = state_dict.keys()
         if "conv_before_upsample.0.weight" in state_keys:
             if "conv_up1.weight" in state_keys:
@@ -962,9 +961,10 @@ class DAT(nn.Module):
             if state_dict.get("conv_before_upsample.weight", None)
             else 64
         )
-
+   
         num_in_ch = state_dict["conv_first.weight"].shape[1]
         in_chans = num_in_ch
+        self.input_channels = in_chans
         if "conv_last.weight" in state_keys:
             num_out_ch = state_dict["conv_last.weight"].shape[0]
         else:

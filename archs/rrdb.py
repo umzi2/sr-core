@@ -77,6 +77,7 @@ class RRDBNet(nn.Module):
         )
 
         self.in_nc: int = self.state["model.0.weight"].shape[1]
+        self.input_channels = self.in_nc
         self.out_nc: int = self.state[f"model.{highest_weight_num}.bias"].shape[0]
 
         self.scale: int = self.get_scale()
