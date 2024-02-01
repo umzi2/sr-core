@@ -247,10 +247,12 @@ class SPAN(nn.Module):
         self.in_channels = num_in_ch
         self.out_channels = num_out_ch
         self.img_range = img_range
+        norm = True
         if 'no_norm' in state_dict:
-            self.norm = False
+            norm = False
         else:
             self.mean = torch.Tensor(rgb_mean).view(1, 3, 1, 1)
+        self.norm = norm
         self.input_channels = num_in_ch
         self.name = "span"
         self.conv_1 = Conv3XC(self.in_channels, feature_channels, gain1=2, s=1)
