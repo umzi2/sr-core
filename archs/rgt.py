@@ -854,7 +854,6 @@ class RGT(nn.Module):
                 upsampler = "nearest+conv"
             else:
                 upsampler = "pixelshuffle"
-                supports_fp16 = False
         elif "upsample.0.weight" in state_keys:
             upsampler = "pixelshuffledirect"
         else:
@@ -968,7 +967,6 @@ class RGT(nn.Module):
                 c_ratio=c_ratio,
             )
             self.layers.append(layer)
-        self.load_state_dict(state_dict, strict=False)
         self.norm = norm_layer(curr_dim)
         # build the last conv layer in deep feature extraction
         if resi_connection == "1conv":
