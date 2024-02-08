@@ -8,6 +8,7 @@ from .dat import DAT
 from .swinir import SwinIR
 from .realcugan import cugan
 from .safmn import SAFMN
+from .rgt import RGT
 
 
 def load_model(state_dict) -> PyTorchModel:
@@ -32,7 +33,10 @@ def load_model(state_dict) -> PyTorchModel:
     elif "layers.0.residual_group.blocks.0.norm1.weight" in state_dict_keys:
         model = SwinIR(state_dict)
     elif "layers.0.blocks.2.attn.attn_mask_0" in state_dict_keys:
-        model = DAT(state_dict)
+        if 'layers.0.blocks.0.gamma' in state_dict_keys:
+            model = RGT(state_dict)
+        else:
+            model = DAT(state_dict)
     elif "block_1.c1_r.sk.weight" in state_dict_keys:
         model = SPAN(state_dict)
     elif 'conv_final.weight' in state_dict_keys or 'unet1.conv1.conv.0.weight' in state_dict_keys or cugan3x == 5:
