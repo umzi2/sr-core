@@ -810,7 +810,7 @@ class RGT(nn.Module):
     def __init__(self, state_dict):
         super().__init__()
         img_size = 64
-        in_chans = 3
+        in_chans = state_dict["conv_first.weight"].shape[1]
         embed_dim = 180
         mlp_ratio = 2
         qkv_bias = True
