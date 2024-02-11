@@ -57,7 +57,7 @@ class Upscaler:
 
                 result = auto_split(img, self.tile_max_size, self.__upscale)
                 output_image_path = os.path.join(self.output_folder, "".join(filename.split(".")[:-1]))
-                output_image_path_format = output_image_path + "." + self.format_image
+                output_image_path_format = f"{ output_image_path }.{self.format_image}"
                 cv_save_image(output_image_path_format, result, [])
 
             except RuntimeError as e:
@@ -67,7 +67,7 @@ class Upscaler:
 
 
 class UpscalerVideo:
-    def __init__(self, model_path, input_folder, output_folder, tile_size=256, form="mp4", codec_video="libx264",
+    def __init__(self, model_path, input_folder, output_folder, tile_size=256, form_video="mp4", codec_video="libx264",
                  codec_audio="aac"):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         state_dict = torch.load(
@@ -83,7 +83,7 @@ class UpscalerVideo:
         self.input_folder = input_folder
         self.output_folder = output_folder
         self.tile_max_size = tile_size
-        self.format_video = form
+        self.format_video = form_video
         self.codec_video = codec_video
         self.codec_audio = codec_audio
         if self.model.input_channels == 1:
@@ -118,7 +118,8 @@ class UpscalerVideo:
                 video_clip = VideoFileClip(input_video_path)
                 processed_clip = video_clip.fl_image(self.process_frame)
                 output_video_path = os.path.join(self.output_folder, "".join(filename.split(".")[:-1]))
-                output_video_path_format = output_video_path + "." + self.format_video
+                output_video_path_format = f"{output_video_path}.{self.format_video}"
+
                 processed_clip.write_videofile(output_video_path_format, codec=self.codec_video,
                                                audio_codec=self.codec_audio)
             except RuntimeError as e:
