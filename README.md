@@ -11,7 +11,7 @@ upscaler.run()
 
 upscaler_video = UpscalerVideo("./4x-esrgan-model.pth", "./inputFolder", "./outputFolder", *256, *"mp4", *"libx264", *"aac")
 
-upscaler_video.run
+upscaler_video.run()
 ```
 
 # Commits
