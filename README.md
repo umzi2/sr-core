@@ -1,12 +1,17 @@
 # SRCore
 Upscaler that supports multiple Image Super-Resolution architectures.
 Example of use with the Upscaler helper class:
+* = optional
 ```py
-from utils.upscaler import Upscaler
+from utils.upscaler import Upscaler, UpscalerVideo
 
-upscaler = Upscaler("./4x-esrgan-model.pth", "./inputFolder", "./outputFolder")
+upscaler = Upscaler("./4x-esrgan-model.pth", "./inputFolder", "./outputFolder", *256, *"png")
 
 upscaler.run()
+
+upscaler_video = UpscalerVideo("./4x-esrgan-model.pth", "./inputFolder", "./outputFolder", *256, *"mp4", *"libx264", *"aac")
+
+upscaler_video.run
 ```
 
 # Commits
