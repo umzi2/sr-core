@@ -9,7 +9,7 @@ from .swinir import SwinIR
 from .realcugan import cugan
 from .safmn import SAFMN
 from .rgt import RGT
-
+from .atd import ATD
 
 def load_model(state_dict) -> PyTorchModel:
     unwrap_keys = ["state_dict", "params_ema", "params-ema", "params", "model", "net"]
@@ -43,6 +43,8 @@ def load_model(state_dict) -> PyTorchModel:
         model = cugan(state_dict)
     elif 'to_feat.weight' in state_dict_keys:
         model = SAFMN(state_dict)
+    elif 'relative_position_index_SA' in state_dict_keys:
+        model = ATD(state_dict)
     else:
         try:
             model = ESRGAN(state_dict)
