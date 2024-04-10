@@ -3,3 +3,4 @@ numpy~=1.24.4
 torch~=2.1.0.dev20230724+cu121
 opencv-python~=4.8.0.74
 torchvision~=0.16.0.dev20230724+cu121
+moviepy~=1.0.3

@@ -67,8 +67,7 @@ class Upscaler:
 
 
 class UpscalerVideo:
-    def __init__(self, model_path, input_folder, output_folder, tile_size=256, form_video="mp4", codec_video="libx264",
-                 codec_audio="aac"):
+    def __init__(self, model_path, input_folder, output_folder, tile_size=256, form_video="mp4",repeat = 1):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         state_dict = torch.load(
             model_path, map_location="cpu", pickle_module=RestrictedUnpickle
@@ -84,15 +83,14 @@ class UpscalerVideo:
         self.output_folder = output_folder
         self.tile_max_size = tile_size
         self.format_video = form_video
-        self.codec_video = codec_video
-        self.codec_audio = codec_audio
+        self.repeat = repeat
         if self.model.input_channels == 1:
             self.channels = "grayscale"
         else:
             self.channels = "color"
 
     def __upscale(self, img: np.ndarray) -> np.ndarray:
-        tensor = img2tensor(img).unsqueeze(0).to(self.device)
+        tensor = img2tensor(img,bgr2rgb=False).unsqueeze(0).to(self.device)
 
         with torch.no_grad():
             tensor = self.model(tensor)
@@ -101,8 +99,10 @@ class UpscalerVideo:
 
     def process_frame(self, frame):
 
-        frame_np = np.array(frame) / 255
-        return auto_split(frame_np, self.tile_max_size, self.__upscale)
+        frame_np = np.array(frame)/255
+        for _ in range(self.repeat):
+            frame_np = auto_split(frame_np, self.tile_max_size, self.__upscale)
+        return frame_np*255
 
     def run(self):
         if not os.path.exists(self.output_folder):
@@ -120,9 +120,7 @@ class UpscalerVideo:
                 output_video_path = os.path.join(self.output_folder, "".join(filename.split(".")[:-1]))
                 output_video_path_format = f"{output_video_path}.{self.format_video}"
 
-                processed_clip.write_videofile(output_video_path_format, codec=self.codec_video,
-                                               audio_codec=self.codec_audio)
+                processed_clip.write_videofile(output_video_path_format)
             except RuntimeError as e:
                 return print(f"[FAILED] {e}")
         safe_cuda_cache_empty()
-
