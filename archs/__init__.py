@@ -10,6 +10,8 @@ from .realcugan import cugan
 from .safmn import SAFMN
 from .rgt import RGT
 from .atd import ATD
+from .camixersr import camixersr
+
 
 def load_model(state_dict) -> PyTorchModel:
     unwrap_keys = ["state_dict", "params_ema", "params-ema", "params", "model", "net"]
@@ -20,10 +22,6 @@ def load_model(state_dict) -> PyTorchModel:
 
     state_dict_keys = list(state_dict.keys())
     model: PyTorchModel | None = None
-    try:
-        cugan3x = state_dict["unet1.conv_bottom.weight"].shape[2]
-    except:
-        cugan3x = 0
     if "UFONE.0.ITLs.0.attn.temperature" in state_dict_keys:
         model = DITN(state_dict)
     elif "residual_layer.0.residual_layer.0.layer.0.fn.0.weight" in state_dict_keys:
@@ -39,12 +37,14 @@ def load_model(state_dict) -> PyTorchModel:
             model = DAT(state_dict)
     elif "block_1.c1_r.sk.weight" in state_dict_keys:
         model = SPAN(state_dict)
-    elif 'conv_final.weight' in state_dict_keys or 'unet1.conv1.conv.0.weight' in state_dict_keys or cugan3x == 5:
+    elif 'conv_final.weight' in state_dict_keys or 'unet1.conv1.conv.0.weight' in state_dict_keys or "unet1.conv_bottom.weight" in state_dict_keys:
         model = cugan(state_dict)
     elif 'to_feat.weight' in state_dict_keys:
         model = SAFMN(state_dict)
     elif 'relative_position_index_SA' in state_dict_keys:
         model = ATD(state_dict)
+    elif "head.weight" in state_dict_keys:
+        model = camixersr(state_dict)
     else:
         try:
             model = ESRGAN(state_dict)
