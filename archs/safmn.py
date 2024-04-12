@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from .utils.state import get_seq_len
 import math
 
+
 # Layer Norm
 class LayerNorm(nn.Module):
     def __init__(self, normalized_shape, eps=1e-6, data_format="channels_first"):
@@ -119,7 +120,6 @@ class SAFM(nn.Module):
         # Activation
         self.act = nn.GELU()
 
-
     def forward(self, x):
         h, w = x.size()[-2:]
 
@@ -164,11 +164,11 @@ class SAFMN(nn.Module):
         dim = state_dict["to_feat.weight"].shape[0]
         n_blocks = get_seq_len(state_dict, "feats")
 
-    # hidden_dim = int(dim * ffn_scale)
+        # hidden_dim = int(dim * ffn_scale)
         hidden_dim = state_dict["feats.0.ccm.ccm.0.weight"].shape[0]
         ffn_scale = hidden_dim / dim
 
-    # 3 * upscaling_factor**2
+        # 3 * upscaling_factor**2
         upscaling_factor = int(math.sqrt(state_dict["to_img.0.weight"].shape[0] / 3))
         self.to_feat = nn.Conv2d(3, dim, 3, 1, 1)
 
@@ -178,7 +178,7 @@ class SAFMN(nn.Module):
             nn.Conv2d(dim, 3 * upscaling_factor**2, 3, 1, 1),
             nn.PixelShuffle(upscaling_factor),
         )
-        self.input_channels = 3 
+        self.input_channels = 3
         self.name = "safmn"
 
     def forward(self, x):

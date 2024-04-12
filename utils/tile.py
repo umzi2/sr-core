@@ -164,7 +164,7 @@ def auto_split(
     img_region = Region(0, 0, w, h)
 
     max_tile_size = (tile_max_size, tile_max_size)
-    #print(f"Auto split image ({w}x{h}px @ {c}) with initial tile size {max_tile_size}.")
+    # print(f"Auto split image ({w}x{h}px @ {c}) with initial tile size {max_tile_size}.")
 
     if w <= max_tile_size[0] and h <= max_tile_size[1]:
         upscale_result = upscale(img)

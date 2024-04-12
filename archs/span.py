@@ -77,21 +77,21 @@ def pixelshuffle_block(in_channels, out_channels, upscale_factor=2, kernel_size=
     """
     Upsample features according to `upscale_factor`.
     """
-    conv = conv_layer(in_channels, out_channels * (upscale_factor ** 2), kernel_size)
+    conv = conv_layer(in_channels, out_channels * (upscale_factor**2), kernel_size)
     pixel_shuffle = nn.PixelShuffle(upscale_factor)
     return sequential(conv, pixel_shuffle)
 
 
 class Conv3XC(nn.Module):
     def __init__(
-            self,
-            c_in: int,
-            c_out: int,
-            gain1=1,
-            gain2=0,
-            s=1,
-            bias: Literal[True] = True,
-            relu=False,
+        self,
+        c_in: int,
+        c_out: int,
+        gain1=1,
+        gain2=0,
+        s=1,
+        bias: Literal[True] = True,
+        relu=False,
     ):
         super().__init__()
         self.weight_concat = None
@@ -238,7 +238,7 @@ class SPAN(nn.Module):
 
         upscale = max(1, int(math.sqrt(state_dict["upsampler.0.weight"].shape[0] / 3)))
         bias = "block_1.c1_r.sk.bias" in state_dict
-        img_range = 255.
+        img_range = 255.0
         rgb_mean = (0.4488, 0.4371, 0.4040)
         self.norm = True
         num_in_ch = state_dict["conv_1.sk.weight"].shape[1]
@@ -248,7 +248,7 @@ class SPAN(nn.Module):
         self.out_channels = num_out_ch
         self.img_range = img_range
         norm = True
-        if 'no_norm' in state_dict:
+        if "no_norm" in state_dict:
             norm = False
         else:
             self.mean = torch.Tensor(rgb_mean).view(1, 3, 1, 1)
