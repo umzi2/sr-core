@@ -31,17 +31,21 @@ def load_model(state_dict) -> PyTorchModel:
     elif "layers.0.residual_group.blocks.0.norm1.weight" in state_dict_keys:
         model = SwinIR(state_dict)
     elif "layers.0.blocks.2.attn.attn_mask_0" in state_dict_keys:
-        if 'layers.0.blocks.0.gamma' in state_dict_keys:
+        if "layers.0.blocks.0.gamma" in state_dict_keys:
             model = RGT(state_dict)
         else:
             model = DAT(state_dict)
     elif "block_1.c1_r.sk.weight" in state_dict_keys:
         model = SPAN(state_dict)
-    elif 'conv_final.weight' in state_dict_keys or 'unet1.conv1.conv.0.weight' in state_dict_keys or "unet1.conv_bottom.weight" in state_dict_keys:
+    elif (
+        "conv_final.weight" in state_dict_keys
+        or "unet1.conv1.conv.0.weight" in state_dict_keys
+        or "unet1.conv_bottom.weight" in state_dict_keys
+    ):
         model = cugan(state_dict)
-    elif 'to_feat.weight' in state_dict_keys:
+    elif "to_feat.weight" in state_dict_keys:
         model = SAFMN(state_dict)
-    elif 'relative_position_index_SA' in state_dict_keys:
+    elif "relative_position_index_SA" in state_dict_keys:
         model = ATD(state_dict)
     elif "head.weight" in state_dict_keys:
         model = camixersr(state_dict)

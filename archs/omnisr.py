@@ -586,9 +586,6 @@ class OmniSR(nn.Module):
         self.up_scale = up_scale
         residual_layer = []
 
-
-
-
         for _ in range(res_num):
             temp_res = OSAG(
                 channel_num=num_feat,

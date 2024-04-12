@@ -8,7 +8,7 @@ from torch.nn import functional as F
 
 
 def flow_warp(
-        x, flow, interp_mode="bilinear", padding_mode="zeros", align_corners=True
+    x, flow, interp_mode="bilinear", padding_mode="zeros", align_corners=True
 ):
     """Warp an image or feature map with optical flow.
 
@@ -148,7 +148,7 @@ class PredictorLG(nn.Module):
         self.ratio = ratio
         self.window_size = window_size
         cdim = dim + k
-        embed_dim = window_size ** 2
+        embed_dim = window_size**2
         self.training = False
 
         self.in_conv = nn.Sequential(
@@ -435,9 +435,12 @@ class Group(nn.Module):
 
         self.n_feats = n_feats
 
-        self.body = nn.ModuleList([
-            Block(n_feats, window_size=window_size, ratio=ratio) for i in range(n_block)
-        ])
+        self.body = nn.ModuleList(
+            [
+                Block(n_feats, window_size=window_size, ratio=ratio)
+                for i in range(n_block)
+            ]
+        )
         self.body_tail = nn.Conv2d(n_feats, n_feats, 1, 1, 0)
         self.training = False
 
@@ -491,16 +494,21 @@ class camixersr(nn.Module):
 
         self.scale = scale
         # define body module
-        self.body = nn.ModuleList([
-            Group(
-                n_feats, n_block=n_block[i], window_size=self.window_sizes, ratio=ratio
-            )
-            for i in range(n_group)
-        ])
+        self.body = nn.ModuleList(
+            [
+                Group(
+                    n_feats,
+                    n_block=n_block[i],
+                    window_size=self.window_sizes,
+                    ratio=ratio,
+                )
+                for i in range(n_group)
+            ]
+        )
         self.body_tail = nn.Conv2d(n_feats, n_feats, 3, 1, 1)
         # define tail module
         self.tail = nn.Sequential(
-            nn.Conv2d(n_feats, n_colors * (scale ** 2), 3, 1, 1), nn.PixelShuffle(scale)
+            nn.Conv2d(n_feats, n_colors * (scale**2), 3, 1, 1), nn.PixelShuffle(scale)
         )
 
         self.training = None
@@ -519,7 +527,7 @@ class camixersr(nn.Module):
         x = self.body_tail(x)
         x = x + shortcut
         x = self.tail(x)
-        return x[:, :, 0: H * self.scale, 0: W * self.scale]
+        return x[:, :, 0 : H * self.scale, 0 : W * self.scale]
 
     def check_image_size(self, x):
         _, _, h, w = x.size()

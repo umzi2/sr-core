@@ -60,12 +60,12 @@ class Gate(nn.Module):
 
 class MLP(nn.Module):
     def __init__(
-            self,
-            in_features,
-            hidden_features=None,
-            out_features=None,
-            act_layer=nn.GELU,
-            drop=0.0,
+        self,
+        in_features,
+        hidden_features=None,
+        out_features=None,
+        act_layer=nn.GELU,
+        drop=0.0,
     ):
         super().__init__()
         out_features = out_features or in_features
@@ -138,16 +138,16 @@ class DynamicPosBias(nn.Module):
 
 class WindowAttention(nn.Module):
     def __init__(
-            self,
-            dim,
-            idx,
-            split_size=[8, 8],
-            dim_out=None,
-            num_heads=6,
-            attn_drop=0.0,
-            proj_drop=0.0,
-            qk_scale=None,
-            position_bias=True,
+        self,
+        dim,
+        idx,
+        split_size=[8, 8],
+        dim_out=None,
+        num_heads=6,
+        attn_drop=0.0,
+        proj_drop=0.0,
+        qk_scale=None,
+        position_bias=True,
     ):
         super().__init__()
         self.dim = dim
@@ -158,7 +158,7 @@ class WindowAttention(nn.Module):
         self.position_bias = position_bias
 
         head_dim = dim // num_heads
-        self.scale = qk_scale or head_dim ** -0.5
+        self.scale = qk_scale or head_dim**-0.5
 
         if idx == 0:
             H_sp, W_sp = self.split_size[0], self.split_size[1]
@@ -263,18 +263,18 @@ class WindowAttention(nn.Module):
 class L_SA(nn.Module):
     # The implementation builds on CAT code https://github.com/zhengchen1999/CAT/blob/main/basicsr/archs/cat_arch.py
     def __init__(
-            self,
-            dim,
-            num_heads,
-            split_size=[2, 4],
-            shift_size=[1, 2],
-            qkv_bias=False,
-            qk_scale=None,
-            drop=0.0,
-            attn_drop=0.0,
-            idx=0,
-            reso=64,
-            rs_id=0,
+        self,
+        dim,
+        num_heads,
+        split_size=[2, 4],
+        shift_size=[1, 2],
+        qkv_bias=False,
+        qk_scale=None,
+        drop=0.0,
+        attn_drop=0.0,
+        idx=0,
+        reso=64,
+        rs_id=0,
     ):
         super().__init__()
         self.dim = dim
@@ -287,10 +287,10 @@ class L_SA(nn.Module):
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
 
         assert (
-                0 <= self.shift_size[0] < self.split_size[0]
+            0 <= self.shift_size[0] < self.split_size[0]
         ), "shift_size must in 0-split_size0"
         assert (
-                0 <= self.shift_size[1] < self.split_size[1]
+            0 <= self.shift_size[1] < self.split_size[1]
         ), "shift_size must in 0-split_size1"
 
         self.branch_num = 2
@@ -298,23 +298,25 @@ class L_SA(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(drop)
 
-        self.attns = nn.ModuleList([
-            WindowAttention(
-                dim // 2,
-                idx=i,
-                split_size=split_size,
-                num_heads=num_heads // 2,
-                dim_out=dim // 2,
-                qk_scale=qk_scale,
-                attn_drop=attn_drop,
-                proj_drop=drop,
-                position_bias=True,
-            )
-            for i in range(self.branch_num)
-        ])
+        self.attns = nn.ModuleList(
+            [
+                WindowAttention(
+                    dim // 2,
+                    idx=i,
+                    split_size=split_size,
+                    num_heads=num_heads // 2,
+                    dim_out=dim // 2,
+                    qk_scale=qk_scale,
+                    attn_drop=attn_drop,
+                    proj_drop=drop,
+                    position_bias=True,
+                )
+                for i in range(self.branch_num)
+            ]
+        )
 
         if (self.rs_id % 2 == 0 and self.idx > 0 and (self.idx - 2) % 4 == 0) or (
-                self.rs_id % 2 != 0 and self.idx % 4 == 0
+            self.rs_id % 2 != 0 and self.idx % 4 == 0
         ):
             attn_mask = self.calculate_mask(
                 self.patches_resolution, self.patches_resolution
@@ -438,7 +440,7 @@ class L_SA(nn.Module):
         _L = _H * _W
 
         if (self.rs_id % 2 == 0 and self.idx > 0 and (self.idx - 2) % 4 == 0) or (
-                self.rs_id % 2 != 0 and self.idx % 4 == 0
+            self.rs_id % 2 != 0 and self.idx % 4 == 0
         ):
             qkv = qkv.view(3, B, _H, _W, C)
             # H-Shift
@@ -450,7 +452,7 @@ class L_SA(nn.Module):
             qkv_0 = qkv_0.view(3, B, _L, C // 2)
             # V-Shift
             qkv_1 = torch.roll(
-                qkv[:, :, :, :, C // 2:],
+                qkv[:, :, :, :, C // 2 :],
                 shifts=(-self.shift_size[1], -self.shift_size[0]),
                 dims=(2, 3),
             )
@@ -485,7 +487,7 @@ class L_SA(nn.Module):
                 B, L, C // 2
             )
             # H-Rwin
-            x2 = self.attns[1](qkv[:, :, :, C // 2:], _H, _W)[:, :H, :W, :].reshape(
+            x2 = self.attns[1](qkv[:, :, :, C // 2 :], _H, _W)[:, :H, :W, :].reshape(
                 B, L, C // 2
             )
             # Concat
@@ -518,18 +520,18 @@ class RG_SA(nn.Module):
     """
 
     def __init__(
-            self,
-            dim,
-            num_heads=8,
-            qkv_bias=False,
-            qk_scale=None,
-            attn_drop=0.0,
-            proj_drop=0.0,
-            c_ratio=0.5,
+        self,
+        dim,
+        num_heads=8,
+        qkv_bias=False,
+        qk_scale=None,
+        attn_drop=0.0,
+        proj_drop=0.0,
+        c_ratio=0.5,
     ):
         super(RG_SA, self).__init__()
         assert (
-                dim % num_heads == 0
+            dim % num_heads == 0
         ), f"dim {dim} should be divided by num_heads {num_heads}."
         self.num_heads = num_heads
         head_dim = dim // num_heads
@@ -573,7 +575,7 @@ class RG_SA(nn.Module):
             if _time < 2:
                 _time = 2  # testing _time must equal or larger than training _time (2)
 
-        _scale = 4 ** _time
+        _scale = 4**_time
 
         # Recursion xT
         for _ in range(_time):
@@ -630,24 +632,24 @@ class RG_SA(nn.Module):
 
 class Block(nn.Module):
     def __init__(
-            self,
-            dim,
-            num_heads,
-            mlp_ratio=4.0,
-            qkv_bias=False,
-            qk_scale=None,
-            drop=0.0,
-            attn_drop=0.0,
-            drop_path=0.0,
-            act_layer=nn.GELU,
-            norm_layer=nn.LayerNorm,
-            idx=0,
-            rs_id=0,
-            split_size=[2, 4],
-            shift_size=[1, 2],
-            reso=64,
-            c_ratio=0.5,
-            layerscale_value=1e-4,
+        self,
+        dim,
+        num_heads,
+        mlp_ratio=4.0,
+        qkv_bias=False,
+        qk_scale=None,
+        drop=0.0,
+        attn_drop=0.0,
+        drop_path=0.0,
+        act_layer=nn.GELU,
+        norm_layer=nn.LayerNorm,
+        idx=0,
+        rs_id=0,
+        split_size=[2, 4],
+        shift_size=[1, 2],
+        reso=64,
+        c_ratio=0.5,
+        layerscale_value=1e-4,
     ):
         super().__init__()
         self.norm1 = norm_layer(dim)
@@ -707,49 +709,51 @@ class Block(nn.Module):
 
 class ResidualGroup(nn.Module):
     def __init__(
-            self,
-            dim,
-            reso,
-            num_heads,
-            mlp_ratio=4.0,
-            qkv_bias=False,
-            qk_scale=None,
-            drop=0.0,
-            attn_drop=0.0,
-            drop_paths=None,
-            act_layer=nn.GELU,
-            norm_layer=nn.LayerNorm,
-            depth=2,
-            use_chk=False,
-            resi_connection="1conv",
-            rs_id=0,
-            split_size=[8, 8],
-            c_ratio=0.5,
+        self,
+        dim,
+        reso,
+        num_heads,
+        mlp_ratio=4.0,
+        qkv_bias=False,
+        qk_scale=None,
+        drop=0.0,
+        attn_drop=0.0,
+        drop_paths=None,
+        act_layer=nn.GELU,
+        norm_layer=nn.LayerNorm,
+        depth=2,
+        use_chk=False,
+        resi_connection="1conv",
+        rs_id=0,
+        split_size=[8, 8],
+        c_ratio=0.5,
     ):
         super().__init__()
         self.use_chk = use_chk
         self.reso = reso
 
-        self.blocks = nn.ModuleList([
-            Block(
-                dim=dim,
-                num_heads=num_heads,
-                mlp_ratio=mlp_ratio,
-                qkv_bias=qkv_bias,
-                qk_scale=qk_scale,
-                drop=drop,
-                attn_drop=attn_drop,
-                drop_path=drop_paths[i],
-                act_layer=act_layer,
-                norm_layer=norm_layer,
-                idx=i,
-                rs_id=rs_id,
-                split_size=split_size,
-                shift_size=[split_size[0] // 2, split_size[1] // 2],
-                c_ratio=c_ratio,
-            )
-            for i in range(depth)
-        ])
+        self.blocks = nn.ModuleList(
+            [
+                Block(
+                    dim=dim,
+                    num_heads=num_heads,
+                    mlp_ratio=mlp_ratio,
+                    qkv_bias=qkv_bias,
+                    qk_scale=qk_scale,
+                    drop=drop,
+                    attn_drop=attn_drop,
+                    drop_path=drop_paths[i],
+                    act_layer=act_layer,
+                    norm_layer=norm_layer,
+                    idx=i,
+                    rs_id=rs_id,
+                    split_size=split_size,
+                    shift_size=[split_size[0] // 2, split_size[1] // 2],
+                    c_ratio=c_ratio,
+                )
+                for i in range(depth)
+            ]
+        )
 
         if resi_connection == "1conv":
             self.conv = nn.Conv2d(dim, dim, 3, 1, 1)
@@ -897,7 +901,7 @@ class RGT(nn.Module):
 
         if "layers.0.blocks.0.attn.attns.0.rpe_biases" in state_keys:
             split_sizes = (
-                    state_dict["layers.0.blocks.0.attn.attns.0.rpe_biases"][-1] + 1
+                state_dict["layers.0.blocks.0.attn.attns.0.rpe_biases"][-1] + 1
             )
             split_size = [int(x) for x in split_sizes]
         if "layers.0.conv.4.weight" in state_keys:
@@ -914,7 +918,7 @@ class RGT(nn.Module):
 
         if "layers.0.blocks.0.attn.attns.0.rpe_biases" in state_keys:
             split_sizes = (
-                    state_dict["layers.0.blocks.0.attn.attns.0.rpe_biases"][-1] + 1
+                state_dict["layers.0.blocks.0.attn.attns.0.rpe_biases"][-1] + 1
             )
             split_size = [int(x) for x in split_sizes]
         self.img_range = img_range
@@ -956,7 +960,7 @@ class RGT(nn.Module):
                 qk_scale=qk_scale,
                 drop=drop_rate,
                 attn_drop=attn_drop_rate,
-                drop_paths=dpr[sum(depth[:i]): sum(depth[: i + 1])],
+                drop_paths=dpr[sum(depth[:i]) : sum(depth[: i + 1])],
                 act_layer=act_layer,
                 norm_layer=norm_layer,
                 depth=depth[i],
@@ -996,7 +1000,7 @@ class RGT(nn.Module):
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(
-                m, (nn.LayerNorm, nn.BatchNorm2d, nn.GroupNorm, nn.InstanceNorm2d)
+            m, (nn.LayerNorm, nn.BatchNorm2d, nn.GroupNorm, nn.InstanceNorm2d)
         ):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
@@ -1013,8 +1017,7 @@ class RGT(nn.Module):
         return x
 
     def forward(self, x):
-        """Input: x: (B, C, H, W)
-        """
+        """Input: x: (B, C, H, W)"""
         self.mean = self.mean.type_as(x)
         x = (x - self.mean) * self.img_range
 
@@ -1025,6 +1028,7 @@ class RGT(nn.Module):
 
         x = x / self.img_range + self.mean
         return x
+
 
 # @ARCH_REGISTRY.register()
 # def rgt_s(**kwargs):

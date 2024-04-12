@@ -1,9 +1,6 @@
-
 import torch
 from torch import nn as nn
 from torch.nn import functional as F
-
-
 
 
 class SEBlock(nn.Module):
@@ -249,6 +246,7 @@ class UNet2(nn.Module):
         z = self.conv_bottom(x5)
         return z
 
+
 class cugan(nn.Module):
     def __init__(self, state_dict):
         super(cugan, self).__init__()
@@ -273,11 +271,14 @@ class cugan(nn.Module):
         self.input_channels = in_channels
         self.scale = scale
         pro = False
-        if list(state_dict.keys())[-1] == "unet2.conv_bottom.bias" or "pro" in state_dict:
+        if (
+            list(state_dict.keys())[-1] == "unet2.conv_bottom.bias"
+            or "pro" in state_dict
+        ):
             pro = True
         self.pro_mode = pro
         if self.scale == 1:
-            raise ValueError(f'1x scale ratio is unsupported. Please use 2x, 3x or 4x.')
+            raise ValueError(f"1x scale ratio is unsupported. Please use 2x, 3x or 4x.")
 
         if self.scale == 2:
             self.unet1 = UNet1(in_channels, out_channels, deconv=True)
@@ -304,7 +305,7 @@ class cugan(nn.Module):
 
         if self.scale == 3:
             ph = ((h0 - 1) // 2 + 1) * 4
-            pw = ((w0 - 1) // 2 + 1) * 4 
+            pw = ((w0 - 1) // 2 + 1) * 4
         else:
             ph = ((h0 - 1) // 2 + 1) * 2
             pw = ((w0 - 1) // 2 + 1) * 2
@@ -336,4 +337,3 @@ class cugan(nn.Module):
             x = (x - 0.15) / 0.7
 
         return x
-

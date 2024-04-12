@@ -11,7 +11,9 @@ from moviepy.editor import VideoFileClip
 
 
 class Upscaler:
-    def __init__(self, model_path, input_folder, output_folder, tile_size=256, form="png"):
+    def __init__(
+        self, model_path, input_folder, output_folder, tile_size=256, form="png"
+    ):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         state_dict = torch.load(
             model_path, map_location="cpu", pickle_module=RestrictedUnpickle
@@ -56,7 +58,9 @@ class Upscaler:
                     raise RuntimeError(f"Unsupported image type: {filename}")
 
                 result = auto_split(img, self.tile_max_size, self.__upscale)
-                output_image_path = os.path.join(self.output_folder, "".join(filename.split(".")[:-1]))
+                output_image_path = os.path.join(
+                    self.output_folder, "".join(filename.split(".")[:-1])
+                )
                 output_image_path_format = f"{ output_image_path }.{self.format_image}"
                 cv_save_image(output_image_path_format, result, [])
 
@@ -67,7 +71,15 @@ class Upscaler:
 
 
 class UpscalerVideo:
-    def __init__(self, model_path, input_folder, output_folder, tile_size=256, form_video="mp4",repeat = 1):
+    def __init__(
+        self,
+        model_path,
+        input_folder,
+        output_folder,
+        tile_size=256,
+        form_video="mp4",
+        repeat=1,
+    ):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         state_dict = torch.load(
             model_path, map_location="cpu", pickle_module=RestrictedUnpickle
@@ -90,7 +102,7 @@ class UpscalerVideo:
             self.channels = "color"
 
     def __upscale(self, img: np.ndarray) -> np.ndarray:
-        tensor = img2tensor(img,bgr2rgb=False).unsqueeze(0).to(self.device)
+        tensor = img2tensor(img, bgr2rgb=False).unsqueeze(0).to(self.device)
 
         with torch.no_grad():
             tensor = self.model(tensor)
@@ -99,10 +111,10 @@ class UpscalerVideo:
 
     def process_frame(self, frame):
 
-        frame_np = np.array(frame)/255
+        frame_np = np.array(frame) / 255
         for _ in range(self.repeat):
             frame_np = auto_split(frame_np, self.tile_max_size, self.__upscale)
-        return frame_np*255
+        return frame_np * 255
 
     def run(self):
         if not os.path.exists(self.output_folder):
@@ -117,7 +129,9 @@ class UpscalerVideo:
             try:
                 video_clip = VideoFileClip(input_video_path)
                 processed_clip = video_clip.fl_image(self.process_frame)
-                output_video_path = os.path.join(self.output_folder, "".join(filename.split(".")[:-1]))
+                output_video_path = os.path.join(
+                    self.output_folder, "".join(filename.split(".")[:-1])
+                )
                 output_video_path_format = f"{output_video_path}.{self.format_video}"
 
                 processed_clip.write_videofile(output_video_path_format)

@@ -1,9 +1,9 @@
-'''
+"""
 An official Pytorch impl of `Transcending the Limit of Local Window:
 Advanced Super-Resolution Transformer with Adaptive Token Dictionary`.
 
 Arxiv: 'https://arxiv.org/abs/2401.08209'
-'''
+"""
 
 import math
 import re
@@ -15,7 +15,6 @@ import torch.utils.checkpoint as checkpoint
 import torch.nn.functional as F
 from .utils.trunc import trunc_normal_
 from .utils.torch_internals import to_2tuple
-
 
 
 # Shuffle operation for Categorization and UnCategorization operations.
@@ -871,7 +870,7 @@ class UpsampleOneStep(nn.Sequential):
 
 
 class ATD(nn.Module):
-    r""" ATD
+    r"""ATD
         A PyTorch impl of : `Transcending the Limit of Local Window: Advanced Super-Resolution Transformer
                              with Adaptive Token Dictionary`.
 
@@ -899,14 +898,18 @@ class ATD(nn.Module):
         super().__init__()
         patch_size = 1
 
-        reducted_dim = state_dict["layers.0.residual_group.layers.0.attn_atd.wq.weight"].shape[0]
-        convffn_kernel_size = state_dict.get("layers.0.residual_group.layers.0.convffn.dwconv.depthwise_conv.0.weight").shape[2]
+        reducted_dim = state_dict[
+            "layers.0.residual_group.layers.0.attn_atd.wq.weight"
+        ].shape[0]
+        convffn_kernel_size = state_dict.get(
+            "layers.0.residual_group.layers.0.convffn.dwconv.depthwise_conv.0.weight"
+        ).shape[2]
 
         qkv_bias = "layers.0.residual_group.layers.0.wqkv.bias" in state_dict
         norm_layer = nn.LayerNorm
         ape = "absolute_pos_embed" in state_dict
         patch_norm = "patch_embed.norm.weight" in state_dict
-        img_range = 1. #sou good
+        img_range = 1.0  # sou good
         max_layer_num = 0
         max_block_num = 0
         in_chans = state_dict["conv_first.weight"].shape[1]
@@ -942,7 +945,9 @@ class ATD(nn.Module):
             upsampler = "pixelshuffledirect"
             upscale = math.isqrt(state_dict["upsample.0.weight"].shape[0] // in_chans)
         for key in state_keys:
-            result = re.match(r"layers.(\d*).residual_group.layers.(\d*).norm1.weight", key)
+            result = re.match(
+                r"layers.(\d*).residual_group.layers.(\d*).norm1.weight", key
+            )
             if result:
                 layer_num, block_num = result.groups()
                 max_layer_num = max(max_layer_num, int(layer_num))
@@ -957,9 +962,19 @@ class ATD(nn.Module):
         num_tokens = hh[0]
         category_size = hh[0]
         embed_dim = hh[1]
-        mlp_ratio = state_dict.get("layers.0.residual_group.layers.0.convffn.fc1.weight").shape[0]/embed_dim
-        if "layers.0.residual_group.layers.0.attn_win.relative_position_bias_table" in state_keys:
-            num_heads_num = state_dict["layers.0.residual_group.layers.0.attn_win.relative_position_bias_table"].shape[1]
+        mlp_ratio = (
+            state_dict.get("layers.0.residual_group.layers.0.convffn.fc1.weight").shape[
+                0
+            ]
+            / embed_dim
+        )
+        if (
+            "layers.0.residual_group.layers.0.attn_win.relative_position_bias_table"
+            in state_keys
+        ):
+            num_heads_num = state_dict[
+                "layers.0.residual_group.layers.0.attn_win.relative_position_bias_table"
+            ].shape[1]
             num_heads = [num_heads_num for _ in range(max_layer_num + 1)]
         else:
             num_heads = depths
@@ -983,14 +998,15 @@ class ATD(nn.Module):
         self.patch_norm = patch_norm
         self.num_features = embed_dim
         self.mlp_ratio = mlp_ratio
-        self.is_norm=True
+        self.is_norm = True
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
             img_size=img_size,
             patch_size=patch_size,
             in_chans=embed_dim,
             embed_dim=embed_dim,
-            norm_layer=norm_layer if self.patch_norm else None)
+            norm_layer=norm_layer if self.patch_norm else None,
+        )
         num_patches = self.patch_embed.num_patches
         patches_resolution = self.patch_embed.patches_resolution
         self.patches_resolution = patches_resolution
@@ -1001,16 +1017,19 @@ class ATD(nn.Module):
             patch_size=patch_size,
             in_chans=embed_dim,
             embed_dim=embed_dim,
-            norm_layer=norm_layer if self.patch_norm else None)
+            norm_layer=norm_layer if self.patch_norm else None,
+        )
 
         # absolute position embedding
         if self.ape:
-            self.absolute_pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
-            trunc_normal_(self.absolute_pos_embed, std=.02)
+            self.absolute_pos_embed = nn.Parameter(
+                torch.zeros(1, num_patches, embed_dim)
+            )
+            trunc_normal_(self.absolute_pos_embed, std=0.02)
 
         # relative position index
         relative_position_index_SA = self.calculate_rpi_sa()
-        self.register_buffer('relative_position_index_SA', relative_position_index_SA)
+        self.register_buffer("relative_position_index_SA", relative_position_index_SA)
         # build Residual Adaptive Token Dictionary Blocks (ATDB)
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
@@ -1037,31 +1056,40 @@ class ATD(nn.Module):
         self.norm = norm_layer(self.num_features)
 
         # build the last conv layer in deep feature extraction
-        if resi_connection == '1conv':
+        if resi_connection == "1conv":
             self.conv_after_body = nn.Conv2d(embed_dim, embed_dim, 3, 1, 1)
-        elif resi_connection == '3conv':
+        elif resi_connection == "3conv":
             # to save parameters and memory
             self.conv_after_body = nn.Sequential(
-                nn.Conv2d(embed_dim, embed_dim // 4, 3, 1, 1), nn.LeakyReLU(negative_slope=0.2, inplace=True),
-                nn.Conv2d(embed_dim // 4, embed_dim // 4, 1, 1, 0), nn.LeakyReLU(negative_slope=0.2, inplace=True),
-                nn.Conv2d(embed_dim // 4, embed_dim, 3, 1, 1))
+                nn.Conv2d(embed_dim, embed_dim // 4, 3, 1, 1),
+                nn.LeakyReLU(negative_slope=0.2, inplace=True),
+                nn.Conv2d(embed_dim // 4, embed_dim // 4, 1, 1, 0),
+                nn.LeakyReLU(negative_slope=0.2, inplace=True),
+                nn.Conv2d(embed_dim // 4, embed_dim, 3, 1, 1),
+            )
 
         # ------------------------- 3, high quality image reconstruction ------------------------- #
-        if self.upsampler == 'pixelshuffle':
+        if self.upsampler == "pixelshuffle":
             # for classical SR
             self.conv_before_upsample = nn.Sequential(
-                nn.Conv2d(embed_dim, num_feat, 3, 1, 1), nn.LeakyReLU(inplace=True))
+                nn.Conv2d(embed_dim, num_feat, 3, 1, 1), nn.LeakyReLU(inplace=True)
+            )
             self.upsample = Upsample(upscale, num_feat)
             self.conv_last = nn.Conv2d(num_feat, num_out_ch, 3, 1, 1)
-        elif self.upsampler == 'pixelshuffledirect':
+        elif self.upsampler == "pixelshuffledirect":
             # for lightweight SR (to save parameters)
-            self.upsample = UpsampleOneStep(upscale, embed_dim, num_out_ch,
-                                            (patches_resolution[0], patches_resolution[1]))
-        elif self.upsampler == 'nearest+conv':
+            self.upsample = UpsampleOneStep(
+                upscale,
+                embed_dim,
+                num_out_ch,
+                (patches_resolution[0], patches_resolution[1]),
+            )
+        elif self.upsampler == "nearest+conv":
             # for real-world SR (less artifacts)
-            assert self.upscale == 4, 'only support x4 now.'
+            assert self.upscale == 4, "only support x4 now."
             self.conv_before_upsample = nn.Sequential(
-                nn.Conv2d(embed_dim, num_feat, 3, 1, 1), nn.LeakyReLU(inplace=True))
+                nn.Conv2d(embed_dim, num_feat, 3, 1, 1), nn.LeakyReLU(inplace=True)
+            )
             self.conv_up1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1)
             self.conv_up2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1)
             self.conv_hr = nn.Conv2d(num_feat, num_feat, 3, 1, 1)
@@ -1072,6 +1100,7 @@ class ATD(nn.Module):
             self.conv_last = nn.Conv2d(embed_dim, num_out_ch, 3, 1, 1)
 
         self.apply(self._init_weights)
+
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=0.02)
@@ -1153,6 +1182,7 @@ class ATD(nn.Module):
         )
 
         return attn_mask
+
     def forward(self, x):
         # padding
         h_ori, w_ori = x.size()[-2], x.size()[-1]
@@ -1211,4 +1241,3 @@ class ATD(nn.Module):
         x = x[..., : h_ori * self.upscale, : w_ori * self.upscale]
 
         return x
-

@@ -44,7 +44,7 @@ def get_h_w_c(image: np.ndarray) -> Tuple[int, int, int]:
     return h, w, c
 
 
-def read_cv(file_path: str, flag='color', float32=True) -> np.ndarray | None:
+def read_cv(file_path: str, flag="color", float32=True) -> np.ndarray | None:
     """Read an image from bytes.
 
     Args:
@@ -62,15 +62,15 @@ def read_cv(file_path: str, flag='color', float32=True) -> np.ndarray | None:
         raise RuntimeError(f'Unsupported image format for file "{file_path}"')
 
     imread_flags = {
-        'color': cv2.IMREAD_COLOR,
-        'grayscale': cv2.IMREAD_GRAYSCALE,
-        'unchanged': cv2.IMREAD_UNCHANGED
+        "color": cv2.IMREAD_COLOR,
+        "grayscale": cv2.IMREAD_GRAYSCALE,
+        "unchanged": cv2.IMREAD_UNCHANGED,
     }
 
     try:
         img = cv2.imread(file_path, imread_flags[flag])
         if float32:
-            img = img.astype(np.float32) / 255.
+            img = img.astype(np.float32) / 255.0
         return img
     except Exception as e:
         raise RuntimeError(
@@ -158,8 +158,8 @@ def tensor2img(tensor, rgb2bgr=True, out_type=np.uint8, min_max=(0, 1)):
         shape (H x W). The channel order is BGR.
     """
     if not (
-            torch.is_tensor(tensor)
-            or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))
+        torch.is_tensor(tensor)
+        or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))
     ):
         raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
