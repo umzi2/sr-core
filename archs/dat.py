@@ -1070,10 +1070,10 @@ class DAT(nn.Module):
         # ------------------------- 2, Deep Feature Extraction ------------------------- #
         self.num_layers = len(depth)
         self.use_chk = use_chk
-        self.num_features = (
-            self.embed_dim
-        ) = embed_dim  # num_features for consistency with other models
-        
+        self.num_features = self.embed_dim = (
+            embed_dim  # num_features for consistency with other models
+        )
+
         heads = num_heads
 
         self.before_RG = nn.Sequential(
