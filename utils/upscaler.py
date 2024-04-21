@@ -110,7 +110,6 @@ class UpscalerVideo:
         return tensor2img(tensor)
 
     def process_frame(self, frame):
-
         frame_np = np.array(frame) / 255
         for _ in range(self.repeat):
             frame_np = auto_split(frame_np, self.tile_max_size, self.__upscale)
