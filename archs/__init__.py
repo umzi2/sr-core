@@ -11,8 +11,7 @@ from .safmn import SAFMN
 from .rgt import RGT
 from .atd import ATD
 from .camixersr import camixersr
-
-
+from .plksr import PLKSR
 def load_model(state_dict) -> PyTorchModel:
     unwrap_keys = ["state_dict", "params_ema", "params-ema", "params", "model", "net"]
     for key in unwrap_keys:
@@ -43,12 +42,15 @@ def load_model(state_dict) -> PyTorchModel:
         or "unet1.conv_bottom.weight" in state_dict_keys
     ):
         model = cugan(state_dict)
-    elif "to_feat.weight" in state_dict_keys:
-        model = SAFMN(state_dict)
-    elif "relative_position_index_SA" in state_dict_keys:
-        model = ATD(state_dict)
     elif "head.weight" in state_dict_keys:
         model = camixersr(state_dict)
+    elif 'to_feat.weight' in state_dict_keys:
+        model = SAFMN(state_dict)
+    elif 'feats.1.channe_mixer.0.weight'in state_dict_keys:
+        model = PLKSR(state_dict)
+    elif 'relative_position_index_SA' in state_dict_keys:
+        model = ATD(state_dict)
+
     else:
         try:
             model = ESRGAN(state_dict)
