@@ -12,6 +12,7 @@ from .rgt import RGT
 from .atd import ATD
 from .camixersr import camixersr
 from .plksr import PLKSR
+from .realplksr import realplksr
 
 
 def load_model(state_dict) -> PyTorchModel:
