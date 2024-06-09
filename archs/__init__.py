@@ -12,7 +12,6 @@ from .rgt import RGT
 from .atd import ATD
 from .camixersr import camixersr
 from .plksr import PLKSR
-from .drct import drct
 from .realplksr import realplksr
 from .seemore import seemore
 
