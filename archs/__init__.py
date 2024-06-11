@@ -12,7 +12,6 @@ from .rgt import RGT
 from .atd import ATD
 from .camixersr import camixersr
 from .plksr import PLKSR
-from .drct import drct
 from .realplksr import realplksr
 from .seemore import seemore
 
@@ -54,13 +53,10 @@ def load_model(state_dict) -> PyTorchModel:
     elif 'to_feat.weight' in state_dict_keys:
         model = SAFMN(state_dict)
     elif 'feats.1.channe_mixer.0.weight' in state_dict_keys:
-        print(0)
         model = PLKSR(state_dict)
     elif 'feats.1.channel_mixer.0.weight' in state_dict_keys and "feats.1.norm.weight" in state_dict_keys:
-        print(1)
         model = realplksr(state_dict)
     elif 'relative_position_index_SA' in state_dict_keys:
-        print(2)
         model = ATD(state_dict)
 
 

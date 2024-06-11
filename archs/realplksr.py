@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from torch.nn.init import trunc_normal_
 from .utils.state import get_seq_len
+from .utils.dysample import DySample
 
 training = False
 
@@ -112,7 +113,7 @@ class realplksr(nn.Module):
         use_ea = False
         norm_groups = 4
         dropout = 0
-
+        state_keys = state_dict.keys()
         num_layers = get_seq_len(state_dict, "feats")
         upscaling_factor = int((state_dict[f"feats.{num_layers - 1}.weight"].shape[0] / 3) ** 0.5)
         n_blocks = num_layers - 3
@@ -121,7 +122,7 @@ class realplksr(nn.Module):
         kernel_size = state_dict["feats.1.lk.conv.weight"].shape[3]
         self.name = "realplksr"
         self.input_channels = 3
-        if "feats.1.attn.f.0.weight" in state_dict.keys():
+        if "feats.1.attn.f.0.weight" in state_keys:
             use_ea = True
 
         self.feats = nn.Sequential(
@@ -140,7 +141,22 @@ class realplksr(nn.Module):
             torch.repeat_interleave, repeats=upscaling_factor**2, dim=1
         )
 
-        self.to_img = nn.PixelShuffle(upscaling_factor)
+        if "to_img.init_pos" in state_keys:
+
+            out_channels = state_dict["to_img.end_conv.weight"].shape[0]
+            in_channels = state_dict["to_img.end_conv.weight"].shape[1]
+            scale = int((in_channels / out_channels) ** 0.5)
+
+            offset_shape = state_dict["to_img.offset.weight"].shape
+            style = 'pl' if offset_shape[1] == out_channels else 'lp'
+            if style == "pl":
+                groups = offset_shape[0]//2
+            else:
+                groups = int(offset_shape[0]/2/scale**2)
+            dyscope = "to_img.scope.weight" in state_keys
+            self.to_img = DySample(in_channels, scale, style,groups, dyscope)
+        else:
+            self.to_img = nn.PixelShuffle(upscaling_factor)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.feats(x) + self.repeat_op(x)
